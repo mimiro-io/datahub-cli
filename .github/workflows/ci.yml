@@ -1,0 +1,34 @@
+name: Build and test
+on: [push, pull_request]
+
+env:
+  GOPROXY: "https://proxy.golang.org"
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.15.3
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.15.3
+
+      - name: Cache Go modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod              # Module download cache
+            ~/.cache/go-build         # Build cache (Linux)
+            ~/Library/Caches/go-build # Build cache (Mac)
+            '%LocalAppData%\go-build' # Build cache (Windows)
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Check out source code
+        uses: actions/checkout@v2
+
+      - name: Build, test
+        run: make all
+

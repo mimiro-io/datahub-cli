@@ -1,0 +1,16 @@
+{
+    "id": "testjobProduct",
+    "incrementalSchedule": "@every 60s",
+    "fullSyncSchedule": "@nightly",
+    "runOnce": true,
+    "paused": false,
+    "source" : {
+        "Type" : "HttpDatasetSource",
+        "Url" : "http://localhost:4343/datasets/Product/changes"
+    },
+    "sink" : {
+        "Type" : "DatasetSink",
+        "Name": "Product"
+    },
+    "transform": {}
+}

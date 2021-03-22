@@ -1,0 +1,71 @@
+// Copyright 2021 MIMIRO AS
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package login
+
+import (
+	"errors"
+	"os"
+	"time"
+
+	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/pterm/pterm"
+	"github.com/spf13/cobra"
+	bolt "go.etcd.io/bbolt"
+)
+
+// addCmd represents the add command
+var DeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete login profile",
+	Long: `Delete (an existing) login profile, for example:
+mim login delete --alias="local"
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+
+		pterm.EnableDebugMessages()
+
+		alias, err := cmd.Flags().GetString("alias")
+		if alias == "" && len(args) > 0 {
+			alias = args[0]
+		}
+
+		if alias == "" {
+			utils.HandleError(errors.New("an alias must be provided"))
+		}
+
+		home, err := os.UserHomeDir()
+		if _, err := os.Stat(home + "/.mim"); os.IsNotExist(err) { // create dir if not exists
+			err = os.Mkdir(home+"/.mim", os.ModePerm)
+			utils.HandleError(err)
+		}
+
+		db, err := bolt.Open(home+"/.mim/conf.db", 0666, &bolt.Options{Timeout: 1 * time.Second})
+		defer db.Close()
+
+		err = db.Update(func(tx *bolt.Tx) error {
+			b := tx.Bucket([]byte("logins"))
+			return b.Delete([]byte(alias))
+		})
+		utils.HandleError(err)
+
+		pterm.Success.Println("Deleted login alias")
+		pterm.Println()
+	},
+	TraverseChildren: true,
+}
+
+func init() {
+	DeleteCmd.Flags().StringP("alias", "a", "", "An alias value for the server")
+}
