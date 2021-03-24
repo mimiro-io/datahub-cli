@@ -145,7 +145,8 @@ func getJobResponse(response []byte) (*jobResponse, error) {
 
 func followJob(jobId, server string, token string) error {
 	pterm.Println()
-	spinner := pterm.DefaultSpinner.Start(fmt.Sprintf("Processing job with id '%s'", jobId))
+	spinner, err := pterm.DefaultSpinner.Start(fmt.Sprintf("Processing job with id '%s'", jobId))
+	utils.HandleError(err)
 	success := true
 	msg := "Finished"
 	for {

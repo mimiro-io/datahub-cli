@@ -40,7 +40,7 @@ mim dataset get <name>
 	Run: func(cmd *cobra.Command, args []string) {
 		format := utils.ResolveFormat(cmd)
 		if format == "json" {
-			pterm.DisableOutput = true
+			pterm.DisableOutput()
 		}
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)

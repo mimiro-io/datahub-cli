@@ -47,7 +47,8 @@ mim transform import <my-job> -f <transform.js>
 		file, err := cmd.Flags().GetString("file")
 		utils.HandleError(err)
 
-		introSpinner := pterm.DefaultSpinner.WithRemoveWhenDone(false).Start("Compiling script")
+		introSpinner, err := pterm.DefaultSpinner.WithRemoveWhenDone(false).Start("Compiling script")
+		utils.HandleError(err)
 
 		importer := NewImporter(file)
 		code, err := importer.Import()

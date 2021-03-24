@@ -168,14 +168,16 @@ func AttemptLogin(server string, token string) error {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 	pterm.Println()
-	introSpinner := pterm.DefaultSpinner.WithRemoveWhenDone(true).Start("Login in to: " + server)
+	introSpinner, err := pterm.DefaultSpinner.WithRemoveWhenDone(true).Start("Login in to: " + server)
+	utils.HandleError(err)
 
 	resp, err := http.DefaultClient.Do(req)
 	utils.HandleError(err)
 
 	time.Sleep(500 * time.Millisecond) // add some time to let the user feel like he is doing something
 
-	introSpinner.Stop()
+	err = introSpinner.Stop()
+	utils.HandleError(err)
 
 	if resp.StatusCode != http.StatusOK {
 		// should have a response message
