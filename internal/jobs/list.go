@@ -146,7 +146,9 @@ func printOutput(output []api.JobOutput, format string) {
 						BulletStyle: pterm.NewStyle(jobTypeColor),
 					}
 				}
-				items = append(items, item.Srender())
+				itemString, err := pterm.BulletListPrinter{}.WithItems([]pterm.BulletListItem{item}).Srender()
+				utils.HandleError(err)
+				items = append(items, strings.TrimSpace(itemString))
 			}
 			triggers := strings.Join(items, ";")
 			line = append(line, triggers)
