@@ -1,8 +1,17 @@
 {
     "id": "testjobProduct",
-    "incrementalSchedule": "@every 60s",
-    "fullSyncSchedule": "@nightly",
-    "runOnce": true,
+    "triggers": [
+        {
+            "triggerType": "cron",
+            "jobType": "fullsync",
+            "schedule": "@nightly"
+        },
+        {
+            "triggerType": "cron",
+            "jobType": "incremental",
+            "schedule": "@every 60s"
+        }
+    ],
     "paused": false,
     "source" : {
         "Type" : "HttpDatasetSource",

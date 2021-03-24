@@ -55,7 +55,7 @@ test:
 license:
 	go get -u github.com/google/addlicense; addlicense -c "MIMIRO AS" $(shell find . -iname "*.go")
 
-mim:
+mim:    bindata
 	go build -o bin/mim ./cmd/cli/main.go
 
 
