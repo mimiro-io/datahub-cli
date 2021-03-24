@@ -101,7 +101,7 @@ func resourcesAddjobsconfigJson() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/addJobsConfig.json", size: 561, mode: os.FileMode(420), modTime: time.Unix(1616593500, 0)}
+	info := bindataFileInfo{name: "resources/addJobsConfig.json", size: 561, mode: os.FileMode(420), modTime: time.Unix(1616613407, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -181,7 +181,7 @@ func resourcesDocJobsMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "resources/doc-jobs.md", size: 5256, mode: os.FileMode(420), modTime: time.Unix(1616599813, 0)}
+	info := bindataFileInfo{name: "resources/doc-jobs.md", size: 5256, mode: os.FileMode(420), modTime: time.Unix(1616613407, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

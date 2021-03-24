@@ -35,7 +35,7 @@ mim dataset changes --dataset=mim.Cows
 	Run: func(cmd *cobra.Command, args []string) {
 		format := utils.ResolveFormat(cmd)
 		if format != "term" { // turn of pterm output
-			pterm.DisableOutput = true
+			pterm.DisableOutput()
 		}
 
 		server, token, err := login.ResolveCredentials()

@@ -17,14 +17,13 @@ require (
 	github.com/kyokomi/emoji v2.2.4+incompatible // indirect
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/pterm/pterm v0.9.1
+	github.com/pterm/pterm v0.12.12
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	github.com/tidwall/pretty v1.1.0
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5 // indirect
 	golang.org/x/net v0.0.0-20201029055024-942e2f445f3c // indirect
-	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd // indirect
 	golang.org/x/text v0.3.4 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )

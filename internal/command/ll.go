@@ -39,7 +39,7 @@ Example:
 		}
 		out, _ := cmd.Flags().GetBool("out")
 		if out {
-			pterm.DisableOutput = true
+			pterm.DisableOutput()
 		}
 
 		token := login.UseLogin(args[0])

@@ -49,7 +49,7 @@ mim query --entity <entityURI> --via <predicateURI> --inverse true | false
 	Run: func(cmd *cobra.Command, args []string) {
 		format := utils.ResolveFormat(cmd)
 		if format == "json" {
-			pterm.DisableOutput = true
+			pterm.DisableOutput()
 		}
 
 		c := resolveCmds(cmd, args)
