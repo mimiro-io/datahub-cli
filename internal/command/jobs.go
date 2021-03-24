@@ -35,6 +35,8 @@ Examples:
 	mim job add -f config.json
 	mim job delete <jobid>
 	mim job get -id <jobid>
+	mim job history -id <jobid>
+	mim job status -id <jobid>
 	mim job operate <jobid> -o start
 `,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -53,6 +55,7 @@ func init() {
 	JobsCmd.AddCommand(jobs.DeleteCmd)
 	JobsCmd.AddCommand(jobs.OperateCmd)
 	JobsCmd.AddCommand(jobs.StatusCmd)
+	JobsCmd.AddCommand(jobs.HistoryCmd)
 
 	// TODO: write nice documentation
 

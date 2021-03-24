@@ -17,6 +17,7 @@ package jobs
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -106,6 +107,11 @@ func printOutput(output []api.JobOutput, format string) {
 				timed := row.History.End.Sub(row.History.Start)
 				lastDuration = fmt.Sprintf("%s", timed)
 				lastError = row.History.LastError
+				lastError = strings.ReplaceAll(lastError, "\r\n", " ")
+				lastError = strings.ReplaceAll(lastError, "\n", " ")
+				if len(lastError) > 64 {
+					lastError = lastError[:64]
+				}
 			}
 
 			line := []string{
@@ -115,19 +121,35 @@ func printOutput(output []api.JobOutput, format string) {
 				row.Job.Sink["Type"].(string),
 				fmt.Sprintf("%t", row.Job.Paused)}
 
-			triggerOut := "[ %v"
+			var items []string
 			for _, trigger := range row.Job.Triggers {
-				if len(triggerOut) > 4 {
-					triggerOut = "; " + triggerOut
+				jobTypeBullet := ">"
+				jobTypeColor := pterm.FgDefault
+				if trigger.JobType == "fullsync" {
+					jobTypeBullet = ">>"
+					jobTypeColor = pterm.FgLightRed
 				}
+				var item pterm.BulletListItem
 				if trigger.TriggerType == "onchange" {
-					triggerOut = fmt.Sprintf(triggerOut, fmt.Sprintf(" onchange=%v (%v)", trigger.MonitoredDataset, trigger.JobType)) + " %v"
+					item = pterm.BulletListItem{
+						Level:       0,
+						Text:        trigger.MonitoredDataset,
+						TextStyle:   pterm.NewStyle(pterm.FgLightBlue),
+						Bullet:      jobTypeBullet,
+					}
 				} else {
-					triggerOut = fmt.Sprintf(triggerOut, fmt.Sprintf(" schedule=%v (%v)", trigger.Schedule, trigger.JobType)) + " %v"
+					item = pterm.BulletListItem{
+						Level:       0,
+						Text:        trigger.Schedule,
+						TextStyle:   pterm.NewStyle(pterm.FgCyan),
+						Bullet:      jobTypeBullet,
+						BulletStyle: pterm.NewStyle(jobTypeColor),
+					}
 				}
+				items = append(items, item.Srender())
 			}
-			triggerOut = fmt.Sprintf(triggerOut, "]")
-			line = append(line, triggerOut)
+			triggers := strings.Join(items, ";")
+			line = append(line, triggers)
 
 			line = append(line,
 				lastRun,
