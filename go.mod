@@ -7,7 +7,7 @@ require (
 	github.com/MichaelMure/go-term-text v0.2.9 // indirect
 	github.com/alecthomas/chroma v0.8.1 // indirect
 	github.com/bcicen/jstream v1.0.1
-	github.com/dimiro1/banner v1.0.0
+	github.com/dimiro1/banner v1.1.0
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dop251/goja v0.0.0-20201107160812-7545ac6de48a
 	github.com/evanw/esbuild v0.9.6
