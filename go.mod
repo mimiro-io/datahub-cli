@@ -18,7 +18,7 @@ require (
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pterm/pterm v0.9.1
-	github.com/spf13/cobra v1.1.1
+	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	github.com/tidwall/pretty v1.0.2
 	go.etcd.io/bbolt v1.3.5
