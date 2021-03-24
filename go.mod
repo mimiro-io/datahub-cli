@@ -20,7 +20,7 @@ require (
 	github.com/pterm/pterm v0.9.1
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
-	github.com/tidwall/pretty v1.0.2
+	github.com/tidwall/pretty v1.1.0
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/image v0.0.0-20200927104501-e162460cd6b5 // indirect
 	golang.org/x/net v0.0.0-20201029055024-942e2f445f3c // indirect
