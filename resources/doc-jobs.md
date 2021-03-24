@@ -1,6 +1,6 @@
 # Mimiro Datahub CLI - jobs
 
-Manage datahub jobs from cli such as add, delete, describe and so on. 
+Manage datahub jobs from cli such as add, delete, describe and so on.
 ```
 %s
 ```
@@ -9,7 +9,7 @@ Manage datahub jobs from cli such as add, delete, describe and so on.
 
 Most, if not all commands can be called with the job id as a parameter.
 
-For example, instead of doing `mim jobs operate -o run --id=<some-job-id>`, 
+For example, instead of doing `mim jobs operate -o run --id=<some-job-id>`,
 you can instead write `mim jobs operate -o run <some-job-id>`
 
 ## Jobs
@@ -22,48 +22,37 @@ Any Job is internally made up from 3 pieces in what is known as a Pipeline.
 The pieces are: Source -> Transform -> Sink, and the dataset also moves in this direction.
 
 Source and Sink are always required, but a Transform is only added when needed, and should also mostly
-occur on OnEvent jobs.
+occur on `onchange` jobs.
 
-### Job types
+### Job triggers
 
-There are 4 different job types:
- * RunOnce
- * Full Sync
- * Incremental Sync
- * OnChange
+A Job can have one or more trigger configurations. A trigger  consists of a `triggerType` and a `jobType`, and depending
+on `triggerType` either `schedule` or `monitoredDataset` as extra property.
 
-### RunOnce
+There are 2 different job types:
+ * `fullsync`
+ * `incremental`
 
-If the RunOnce flag = true, then this job is run once when added, and then deleted when finished.
-This job type takes precedence to any other, so you cannot combine it with the other types.
+A `fullsync` job is intended to fetch all entities in a remote dataset, and only when it doesn't support changes and/or
+deletes.
 
-Instead of using this to run a job, it can be smarter to just add a job with its enabled flag set
-to false, and use operate to run it.
-
-### Full Sync
-
-FullSync has to have the fullSyncSchedule set to a valid [Cron](https://godoc.org/github.com/robfig/cron) value.
-This can be combined with an incremental schedule to have the job run incrementally for regular schedules, but
-able to run a full sync maybe once a day.
-
-Full sync is intended to fetch all entities in a remote dataset, and only when it doesn't support changes and/or
- deletes. 
-
-### Incremental Sync
-
-IncrementalSync is a variation on the FullSync, but is intended to run on a more frequent schedule to fetch 
+`incremental` is a variation on the FullSync, but is intended to run on a more frequent schedule to fetch
 changes, if the dataset source supports it.
 
-There is protection in the Job Scheduler to prevent jobs from running in parallel, so a Full Sync will be 
+There is protection in the Job Scheduler to prevent jobs from running in parallel, so a Full Sync will be
 rescheduled if an incremental is running, but an Incremental will be skipped if a Full is running.
 
-Incremental jobs should finish before the next is scheduled, so make sure your schedule is correct. 
+Incremental jobs should finish before the next is scheduled, so make sure your schedule is correct.
 
-### OnChange
 
-An OnChange Job ( onChange = a dataset) is a special event that triggers on changes to the specified dataset
-instead of a schedule.
+There are 2 different trigger types:
+ * `cron`
+ * `onchange`
 
+A `cron` trigger has to have a `schedule` set to a valid [Cron](https://godoc.org/github.com/robfig/cron) value.
+
+An `onchange` Job ( onChange = a dataset) is a special event that triggers on changes to the specified dataset
+instead of a schedule. The specified dataset to monitor is set with the `monitoredDataset` property of the trigger.
 You use this job to run a transformation on an existing dataset.
 
 ## List
@@ -74,17 +63,16 @@ mim jobs list
 
 This command is the simplest command, and it is used to show a list of all server jobs.
 
-| Id   | Source   | Transform   | Sink   | Paused   | Schedule full/incr   | Event   | Last Run   | Last Duration   | Error   |
-| --- | ------ | --------- | ---- | ------ | ------------------ | ----- | -------- | ------------ | ----- |
-| test-import | DatasetSource |   | DatasetSink | false | /@every 1m |   | 2020-11-19T14:56:17+01:00 | 30ms | |
+| Id   | Source   | Transform   | Sink   | Paused   | Triggers   |  Last Run   | Last Duration   | Error   |
+| --- | ------ | --------- | ---- | ------ | ------------------ | -------- | ------------ | ----- |
+| test-import | DatasetSource |   | DatasetSink | false | > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms | |
 
  * Id - This is the job id
  * Source - Dataset source
  * Transform - Dataset transform if any
  * Sink - Dataset sink
  * Paused - Is the job paused or not
- * Schedule full/incremental - The full and/or the incremental schedule for the job
- * Event - If the job is an event, then this is the dataset it reacts on changes on
+ * Triggers - > = incremental, >> = fullsync, cyan=schedule, lightblue=onchange
  * Last Run - When the job last was run
  * Last Duration - How long did the last job run
  * Error - If any errors occurred, they are shown here
@@ -106,10 +94,12 @@ A Job has this format:
 ```
 {
     "id" : "event-copy-vet",
-    "fullSyncSchedule"    : "",
-    "incrementalSchedule" : "",
-    "onChange": "db.People",
-    "runOnce": false,
+    "triggers": [
+        {
+            "triggerType": "onchange",
+            "monitoredDataset": "db.People"
+        }
+    ],
     "paused": true,
     "source" : {
         "Type" : "DatasetSource",
@@ -135,13 +125,13 @@ from the Jobs cli, although it is much better to do this from the Transform cli.
 There are (currently) 2 supported Source types:
  * DatasetSource
  * HttpDatasetSource
- 
+
 More datasources are planned.
 
 ### DatasetSource
 
-This is used when the source is an internal dataset that already exists in the Datahub. 
- 
+This is used when the source is an internal dataset that already exists in the Datahub.
+
 Example:
 ```
 "source" : {
@@ -177,8 +167,24 @@ Type and Url are required fields.
 
 Note that User and Password combination is not currently supported
 
+## Delete
 
+```
+mim job delete --id <id>
+```
 
+## Status
 
+```
+mim jobs status
+```
 
- 
+This command lists the currently running jobs, with job-id and starting time as table columns.
+
+## History
+
+```
+mim jobs history --id <job-id>
+```
+
+This command shows information about the last run of the given job
