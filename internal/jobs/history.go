@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -80,16 +81,18 @@ func getHistory(id string, server string, token string) api.JobHistory {
 }
 
 func renderHistory(history api.JobHistory, format string) {
-
-	jd, err := json.Marshal(history)
+	bf := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(bf)
+	jsonEncoder.SetEscapeHTML(false)
+	err := jsonEncoder.Encode(history)
 	utils.HandleError(err)
+	jd := bf.String()
 
 	switch format {
 	case "json":
-		fmt.Println(string(jd))
-	case "pretty":
+		fmt.Println(jd)
 	default:
-		p := pretty.Pretty(jd)
+		p := pretty.Pretty([]byte(jd))
 		result := pretty.Color(p, nil)
 		fmt.Println(string(result))
 	}
