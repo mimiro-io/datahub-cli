@@ -97,7 +97,7 @@ func getContentsCompletion(pattern string) []string {
 	var contentIds []string
 
 	for _, content := range contentlist {
-		if strings.HasPrefix(content.Id, pattern) {
+		if strings.HasPrefix(strings.ToLower(content.Id), pattern) {
 			contentIds = append(contentIds, content.Id)
 		}
 	}
