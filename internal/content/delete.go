@@ -52,15 +52,32 @@ mim content delete my-id
 			os.Exit(1)
 		}
 
+		confirm, err := cmd.Flags().GetBool("confirm")
+		utils.HandleError(err)
+
 		pterm.EnableDebugMessages()
 
 		pterm.DefaultSection.Println("Deleting content " + server + "/content/" + id)
 
-		err = utils.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
-		utils.HandleError(err)
+		if confirm {
+			pterm.DefaultSection.Printf("Delete content with content id " + id + " on " + server + ", please type (y)es or (n)o and then press enter:")
+			if utils.AskForConfirmation() {
+				err = utils.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
+				utils.HandleError(err)
 
-		pterm.Success.Println("Deleted content")
-		pterm.Println()
+				pterm.Success.Println("Deleted content")
+				pterm.Println()
+			} else {
+				pterm.Println("Aborted!")
+			}
+		} else {
+			err = utils.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
+			utils.HandleError(err)
+
+			pterm.Success.Println("Deleted content")
+			pterm.Println()
+		}
+
 	},
 	TraverseChildren: true,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -73,4 +90,5 @@ mim content delete my-id
 
 func init() {
 	DeleteCmd.Flags().StringP("id", "i", "", "The id of the content to delete.")
+	DeleteCmd.Flags().BoolP("confirm", "C", true, "Default flag to ask for confirmation before delete")
 }
