@@ -17,6 +17,7 @@ package jobs
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -39,6 +40,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(0)
+		}
+
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)
 
@@ -185,4 +192,10 @@ func init() {
 	OperateCmd.Flags().StringP("id", "i", "", "The jobid name of the job you want to get operate on")
 	OperateCmd.Flags().StringP("since", "s", "", "The since token to reset to, if resetting or running")
 	OperateCmd.Flags().StringP("jobType", "t", "", "jobType for operation run: fullsync or incremental")
+	OperateCmd.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"run", "stop", "pause", "resume", "kill"}, cobra.ShellCompDirectiveDefault
+	})
+	OperateCmd.RegisterFlagCompletionFunc("jobType", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"fullsync", "incremental"}, cobra.ShellCompDirectiveDefault
+	})
 }
