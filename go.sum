@@ -71,8 +71,8 @@ github.com/dop251/goja v0.0.0-20201107160812-7545ac6de48a h1:RYcWAh8DBgQQ7Fi3Yho
 github.com/dop251/goja v0.0.0-20201107160812-7545ac6de48a/go.mod h1:Mw6PkjjMXWbTj+nnj4s3QPXq1jaT0s5pC0iFD4+BOAA=
 github.com/eliukblau/pixterm/pkg/ansimage v0.0.0-20191210081756-9fb6cf8c2f75 h1:vbix8DDQ/rfatfFr/8cf/sJfIL69i4BcZfjrVOxsMqk=
 github.com/eliukblau/pixterm/pkg/ansimage v0.0.0-20191210081756-9fb6cf8c2f75/go.mod h1:0gZuvTO1ikSA5LtTI6E13LEOdWQNjIo5MTQOvrV0eFg=
-github.com/evanw/esbuild v0.9.6 h1:w7NbUL9q5U1H7QGJDZQsiqWqSkMOZk/Wuu2QE3tw5aA=
-github.com/evanw/esbuild v0.9.6/go.mod h1:y2AFBAGVelPqPodpdtxWWqe6n2jYf5FrsJbligmRmuw=
+github.com/evanw/esbuild v0.11.3 h1:0sKpcSUWrBJyZ04RB2UGrnDZQuTGZ7wcDgRayfKVQpg=
+github.com/evanw/esbuild v0.11.3/go.mod h1:y2AFBAGVelPqPodpdtxWWqe6n2jYf5FrsJbligmRmuw=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0 h1:8xPHl4/q1VyqGIPif1F+1V3Y3lSmrq01EabUW3CoW5s=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
