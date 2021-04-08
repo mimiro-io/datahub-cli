@@ -68,7 +68,7 @@ func GetDatasetsCompletion(pattern string) []string {
 	var datasetIds []string
 
 	for _, dataset := range datasetlist {
-		if strings.HasPrefix(dataset.Name, pattern) {
+		if strings.HasPrefix(strings.ToLower(dataset.Name), strings.ToLower(pattern)) {
 			datasetIds = append(datasetIds, dataset.Name)
 		}
 	}

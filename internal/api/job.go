@@ -139,7 +139,7 @@ func GetJobsCompletion(pattern string) []string {
 	var jobIds []string
 
 	for _, job := range joblist {
-		if strings.HasPrefix(job.Id, pattern) {
+		if strings.HasPrefix(strings.ToLower(job.Id), strings.ToLower(pattern)) {
 			jobIds = append(jobIds, job.Id)
 		}
 	}
