@@ -16,10 +16,10 @@ package command
 
 import (
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
-	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -73,7 +73,7 @@ func init() {
 	Login2Cmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 
 		pterm.Println()
-		result := utils.RenderMarkdown(command, "resources/doc-login.md")
+		result := docs.RenderMarkdown(command, "doc-login.md")
 		pterm.Println(result)
 	})
 
