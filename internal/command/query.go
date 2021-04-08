@@ -17,6 +17,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -256,7 +257,7 @@ func init() {
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
-		result := utils.RenderMarkdown(command, "resources/doc-query.md")
+		result := docs.RenderMarkdown(command, "doc-query.md")
 		pterm.Println(result)
 	})
 }

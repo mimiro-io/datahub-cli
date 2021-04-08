@@ -41,11 +41,7 @@ help: ## Display available commands
 run:
 	go run cmd/cli/main.go
 
-bindata:
-	GOBIN="$$PWD/bin" go install github.com/go-bindata/go-bindata/...
-	./bin/go-bindata -pkg assets -o internal/assets/cow.go resources
-
-build: bindata
+build:
 	go build cmd/cli/main.go
 
 test:
@@ -55,7 +51,7 @@ test:
 license:
 	go get -u github.com/google/addlicense; addlicense -c "MIMIRO AS" $(shell find . -iname "*.go")
 
-mim:    bindata
+mim:
 	go build -o bin/mim ./cmd/cli/main.go
 
 

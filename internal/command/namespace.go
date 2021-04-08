@@ -15,10 +15,10 @@
 package command
 
 import (
+	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/namespaces"
-	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +45,7 @@ func init() {
 
 	NamespaceCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
-		result := utils.RenderMarkdown(command, "resources/doc-namespace.md")
+		result := docs.RenderMarkdown(command, "doc-namespace.md")
 		pterm.Println(result)
 	})
 }

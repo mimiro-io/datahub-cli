@@ -15,9 +15,8 @@
 package command
 
 import (
+	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"os"
-
-	"github.com/mimiro-io/datahub-cli/internal/utils"
 
 	"github.com/mimiro-io/datahub-cli/internal/jobs"
 	"github.com/pterm/pterm"
@@ -61,7 +60,7 @@ func init() {
 
 	JobsCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
-		result := utils.RenderMarkdown(command, "resources/doc-jobs.md")
+		result := docs.RenderMarkdown(command, "doc-jobs.md")
 		pterm.Println(result)
 	})
 

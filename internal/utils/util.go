@@ -29,8 +29,6 @@ import (
 	"text/template"
 	"unicode"
 
-	markdown "github.com/MichaelMure/go-term-markdown"
-	"github.com/mimiro-io/datahub-cli/internal/assets"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/pretty"
 
@@ -110,26 +108,6 @@ func AskForConfirmation() bool {
 		fmt.Println("Type (y)es or (n)o and then press enter:")
 		return AskForConfirmation()
 	}
-}
-
-func RenderMarkdown(c *cobra.Command, filename string) string {
-	source, err := assets.Asset(filename)
-	if err != nil {
-		pterm.Error.Print(err)
-		return ""
-	}
-
-	writer := bytes.NewBufferString("")
-	err = Tmpl(writer, c.HelpTemplate(), c)
-	if err != nil {
-		pterm.Error.Print(err)
-		return ""
-	}
-
-	help := fmt.Sprintf(string(source), writer.String())
-
-	result := markdown.Render(help, 120, 2)
-	return string(result)
 }
 
 func Tmpl(w io.Writer, text string, data interface{}) error {
