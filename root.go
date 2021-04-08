@@ -16,15 +16,11 @@ limitations under the License.
 package datahub_mim_cli
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
 
-	"github.com/dimiro1/banner"
-	"github.com/mattn/go-colorable"
-	"github.com/mimiro-io/datahub-cli/internal/assets"
 	"github.com/mimiro-io/datahub-cli/internal/command"
 
 	"github.com/spf13/cobra"
@@ -33,10 +29,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	cfgFile    string
-	disableCow bool
-)
+var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -48,9 +41,6 @@ var RootCmd = &cobra.Command{
 			cmd.Usage()
 			os.Exit(0)
 		}
-	},
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		showCow(cmd)
 	},
 }
 
@@ -65,7 +55,6 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	RootCmd.PersistentFlags().BoolVar(&disableCow, "disable-banner", true, "Set to true to disable the banner")
 	RootCmd.PersistentFlags().Bool("pretty", false, "Formats the output as pretty where possible")
 	RootCmd.PersistentFlags().Bool("json", false, "Formats the output as raw json if possible")
 	addCommands()
@@ -110,24 +99,4 @@ func initConfig() {
 	_ = viper.ReadInConfig()
 
 	viper.AutomaticEnv() // read in environment variables that match
-}
-
-func showCow(cmd *cobra.Command) {
-	pretty, _ := cmd.Flags().GetBool("pretty")
-	if pretty {
-		disableCow = true
-	}
-	json, _ := cmd.Flags().GetBool("json")
-	if json {
-		disableCow = true
-	}
-
-	if !disableCow {
-		data, err := assets.Asset("resources/cow.txt")
-		if err != nil { // no cow
-			return
-		}
-
-		banner.Init(colorable.NewColorableStderr(), !disableCow, true, bytes.NewReader(data))
-	}
 }
