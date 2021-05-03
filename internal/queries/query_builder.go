@@ -99,6 +99,11 @@ func (qb *QueryBuilder) QuerySingle(entityId string) (*api.Entity, error) {
 		return nil, nil
 	}
 
+	e := entity[1]
+	if e.ID == entityId && len(e.Properties) == 0 { // this occurs when dh doet find a result
+		return nil, nil
+	}
+
 	return &entity[1], nil
 }
 

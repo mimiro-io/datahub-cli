@@ -101,6 +101,27 @@ func (tf *transformer) NewEntity() *api.Entity {
 	return entity
 }
 
+func (tf *transformer) ToString(obj interface{}) string {
+	if obj == nil {
+		return "undefined"
+	}
+
+	switch obj.(type) {
+	case *api.Entity:
+		return fmt.Sprintf("%v", obj)
+	case map[string]interface{}:
+		return fmt.Sprintf("%v", obj)
+	case int, int32, int64:
+		return fmt.Sprintf("%d", obj)
+	case float32, float64:
+		return fmt.Sprintf("%g", obj)
+	case bool:
+		return fmt.Sprintf("%v", obj)
+	default:
+		return fmt.Sprintf("%s", obj)
+	}
+}
+
 func (tf *transformer) IsValidEntity(entity *api.Entity) bool {
 	if entity == nil {
 		return false

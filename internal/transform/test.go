@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	"github.com/bcicen/jstream"
 	"github.com/dop251/goja"
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -47,29 +46,79 @@ function transform_entities_ex(entities) {
 // (i mean, not really, but maybe it will help)
 const helperJavascriptFunctions = `
 function SetProperty(entity, prefix, name, value) {
+	if (entity === null || entity === undefined) {
+		return;
+	}
+	if (entity.Properties === null || entity.Properties === undefined) {
+		return;
+	}
 	entity["Properties"][prefix+":"+name] = value;
 }
-function GetProperty(entity, prefix, name) {
-	return entity["Properties"][prefix+":"+name];
+function GetProperty(entity, prefix, name, defaultValue) {
+	if (entity === null || entity === undefined) {
+		return defaultValue;
+	}
+	if (entity.Properties === null || entity.Properties === undefined) {
+		return defaultValue;
+	}
+	var value = entity["Properties"][prefix+":"+name]
+	if (value === undefined || value === null) {
+		return defaultValue;
+	}
+	return value;
 }
 function AddReference(entity, prefix, name, value) {
+	if (entity === null || entity === undefined) {
+		return;
+	}
+	if (entity.References === null || entity.References === undefined) {
+		return;
+	}
 	entity["References"][prefix+":"+name] = value;
 }
 function GetId(entity) {
-    return entity["ID"];
+	if (entity === null || entity === undefined) {
+		return;
+	}
+	return entity["ID"];
 }
+function SetId(entity, id) {
+	if (entity === null || entity === undefined) {
+		return;
+	}
+	entity.ID = id
+}
+
+function SetDeleted(entity, deleted) {
+	if (entity === null || entity === undefined) {
+		return;
+	}
+	entity.IsDeleted = deleted
+}
+
+function GetDeleted(entity) {
+	if (entity === null || entity === undefined) {
+		return;
+	}
+	return entity.IsDeleted;
+}
+
 function PrefixField(prefix, field) {
     return prefix + ":" + field;
 }
 function RenameProperty(entity, originalPrefix, originalName, newPrefix, newName) {
+	if (entity === null || entity === undefined) {
+		return;
+	}
 	var value = GetProperty(entity, originalPrefix, originalName);
 	SetProperty(entity, newPrefix, newName, value);
 	RemoveProperty(entity, originalPrefix, originalName);
 }
-function ToString(value){
-	return (value === null || value === undefined) ? value : value.toString();
-}
+
 function RemoveProperty(entity, prefix, name){
+	if (entity === null || entity === undefined) {
+		return;
+	}
 	delete entity["Properties"][prefix+":"+name];
 }
 `
@@ -107,6 +156,9 @@ cat <transform.js> | mim transform test -n sdb.Animal
 
 		pterm.DefaultSection.Println("Testing script function")
 
+		if file == "" {
+			utils.HandleError(errors.New("missing or empty file parameter"))
+		}
 		importer := NewImporter(file)
 		res, err := importer.Import()
 
@@ -286,6 +338,7 @@ func hookEngine(server string, token string) *goja.Runtime {
 	engine.Set("Log", tf.Log)
 	engine.Set("NewEntity", tf.NewEntity)
 	engine.Set("IsValidEntity", tf.IsValidEntity)
+	engine.Set("ToString", tf.ToString)
 	return engine
 }
 

@@ -364,6 +364,9 @@ type ConsoleSink struct {
 func (s *ConsoleSink) ProcessEntities(entities []*Entity) error {
 
 	for _, e := range entities {
+		if e == nil {
+			continue
+		}
 		if e.ID == "@context" {
 			s.prettyContext(e.Properties)
 		} else if e.ID == "@continuation" {
