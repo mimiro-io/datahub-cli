@@ -17,6 +17,7 @@ package queries
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
@@ -152,7 +153,7 @@ func (qb *QueryBuilder) Query(startingEntities []string, predicate string, inver
 }
 
 func (qb *QueryBuilder) GetNamespacePrefix(urlExpansion string) (string, error) {
-	res, err := utils.GetRequest(qb.server, qb.token, fmt.Sprintf("/query/namespace?expansion=%s", urlExpansion))
+	res, err := utils.GetRequest(qb.server, qb.token, fmt.Sprintf("/query/namespace?expansion=%s", url.QueryEscape(urlExpansion)))
 	if err != nil {
 		return "", err
 	}
