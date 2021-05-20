@@ -14,7 +14,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20201024011455-45c732cc8a6b // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/pterm/pterm v0.12.12
+	github.com/pterm/pterm v0.12.17
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	github.com/tidwall/pretty v1.1.0
