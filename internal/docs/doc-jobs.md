@@ -184,7 +184,7 @@ This command lists the currently running jobs, with job-id and starting time as 
 ## History
 
 ```
-mim jobs history --id <job-id>
+mim jobs history <job-id>
 ```
 
 This command shows information about the last run of the given job
