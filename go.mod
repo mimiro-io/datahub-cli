@@ -8,7 +8,7 @@ require (
 	github.com/bcicen/jstream v1.0.1
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dop251/goja v0.0.0-20201107160812-7545ac6de48a
-	github.com/evanw/esbuild v0.9.6
+	github.com/evanw/esbuild v0.12.5
 	github.com/franela/goblin v0.0.0-20210113153425-413781f5e6c8
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/gomarkdown/markdown v0.0.0-20201024011455-45c732cc8a6b // indirect
