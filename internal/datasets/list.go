@@ -58,9 +58,33 @@ mim dataset list
 		sets, err := dm.List()
 		utils.HandleError(err)
 
-		renderDataSets(sets, format)
+		resp, err := utils.GetRequest(server, token, "/datasets/core.Dataset/entities")
+
+		var coreDataset []api.Entity
+
+		if err == nil {
+			json.Unmarshal(resp, &coreDataset)
+		}
+
+		if coreDataset != nil {
+			merged := mergeDatasetDetails(sets, coreDataset)
+			renderDataSets(merged, format)
+		} else {
+			renderDataSets(sets, format)
+		}
 	},
 	TraverseChildren: true,
+}
+
+func mergeDatasetDetails(datasets []api.Dataset, coreDataset []api.Entity) []api.Dataset {
+	for i, dataset := range datasets {
+		for _, entity := range coreDataset {
+			if dataset.Name == entity.ID[4:] {
+				datasets[i].Items = int(entity.Properties["ns0:items"].(float64))
+			}
+		}
+	}
+	return datasets
 }
 
 func renderDataSets(sets []api.Dataset, format string) {
@@ -78,7 +102,7 @@ func renderDataSets(sets []api.Dataset, format string) {
 		fmt.Println(string(result))
 	default:
 		out := make([][]string, 0)
-		out = append(out, []string{"#", "Dir", "Name"})
+		out = append(out, []string{"#", "Dir", "Items", "Name"})
 
 		for i, set := range sets {
 			t := "   "
@@ -99,6 +123,7 @@ func renderDataSets(sets []api.Dataset, format string) {
 			out = append(out, []string{
 				fmt.Sprintf("%d", i+1),
 				t,
+				fmt.Sprintf("%d", set.Items),
 				set.Name,
 			})
 		}
