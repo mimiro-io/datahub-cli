@@ -53,7 +53,10 @@ mim dataset get <name>
 		if len(args) > 0 {
 			name = args[0]
 		}
-		e, err := getDataset(server, token, name)
+
+		dm := api.NewDatasetManager(server, token)
+
+		e, err := dm.Get(name)
 		utils.HandleError(err)
 		printDataset(e, format)
 		pterm.Println()
@@ -71,21 +74,6 @@ mim dataset get <name>
 func init() {
 	GetCmd.Flags().StringP("name", "n", "", "The dataset to get")
 
-}
-
-func getDataset(server string, token string, name string) (*api.Entity, error) {
-	res, err := utils.GetRequest(server, token, "/datasets/"+name)
-	if err != nil {
-		return nil, err
-	}
-
-	e := &api.Entity{}
-	err = json.Unmarshal(res, e)
-	if err != nil {
-		return nil, err
-	}
-
-	return e, nil
 }
 
 func propStripper(entity *api.Entity) map[string]interface{} {

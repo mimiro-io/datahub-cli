@@ -59,6 +59,22 @@ func (dm *DatasetManager) List() ([]Dataset, error) {
 	return datasets, nil
 }
 
+func (dm *DatasetManager) Get(name string) (*Entity, error) {
+	res, err := utils.GetRequest(dm.server, dm.token, "/datasets/"+name)
+	if err != nil {
+		return nil, err
+	}
+
+	e := &Entity{}
+
+	err = json.Unmarshal(res, e)
+	if err != nil {
+		return nil, err
+	}
+
+	return e, nil
+}
+
 func GetDatasetsCompletion(pattern string) []string {
 	server, token, err := login.ResolveCredentials()
 	utils.HandleError(err)
