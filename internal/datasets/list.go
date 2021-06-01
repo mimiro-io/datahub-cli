@@ -123,7 +123,7 @@ func renderDataSets(sets []api.Dataset, format string) {
 			out = append(out, []string{
 				fmt.Sprintf("%d", i+1),
 				t,
-				fmt.Sprintf("%d", set.Items),
+				fmt.Sprintf("%10d", set.Items),
 				set.Name,
 			})
 		}
