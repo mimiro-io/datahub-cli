@@ -16,6 +16,7 @@ package api
 
 import (
 	"encoding/json"
+	"sort"
 	"strings"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
@@ -51,6 +52,10 @@ func (dm *DatasetManager) List() ([]Dataset, error) {
 	if err != nil {
 		return nil, err
 	}
+	sort.Slice(datasets, func(i, j int) bool {
+		return datasets[i].Name < datasets[j].Name
+	})
+
 	return datasets, nil
 }
 
