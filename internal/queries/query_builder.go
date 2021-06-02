@@ -16,6 +16,7 @@ package queries
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 
@@ -96,13 +97,8 @@ func (qb *QueryBuilder) QuerySingle(entityId string) (*api.Entity, error) {
 		return nil, err
 	}
 
-	if len(entity) < 1 {
-		return nil, nil
-	}
-
-	e := entity[1]
-	if e.ID == entityId && len(e.Properties) == 0 { // this occurs when dh doet find a result
-		return nil, nil
+	if len(entity) < 2 {
+		return nil, errors.New("unexpected response")
 	}
 
 	return &entity[1], nil
