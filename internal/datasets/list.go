@@ -17,6 +17,8 @@ package datasets
 import (
 	"encoding/json"
 	"fmt"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"strings"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -104,6 +106,8 @@ func renderDataSets(sets []api.Dataset, format string) {
 		out := make([][]string, 0)
 		out = append(out, []string{"#", "Dir", "Items", "Name"})
 
+		p := message.NewPrinter(language.English)
+
 		for i, set := range sets {
 			t := "   "
 			if set.Type != nil {
@@ -123,7 +127,7 @@ func renderDataSets(sets []api.Dataset, format string) {
 			out = append(out, []string{
 				fmt.Sprintf("%d", i+1),
 				t,
-				fmt.Sprintf("%10d", set.Items),
+				p.Sprintf("%13d", set.Items),
 				set.Name,
 			})
 		}
