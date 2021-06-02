@@ -16,6 +16,7 @@ package queries
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -95,8 +96,8 @@ func (qb *QueryBuilder) QuerySingle(entityId string) (*api.Entity, error) {
 		return nil, err
 	}
 
-	if len(entity) < 1 {
-		return nil, nil
+	if len(entity) < 2 {
+		return nil, errors.New("unexpected response")
 	}
 
 	return &entity[1], nil
