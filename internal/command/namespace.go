@@ -26,7 +26,7 @@ import (
 var NamespaceCmd = &cobra.Command{
 	Use: "namespace",
 
-	Short: "Work with Namespaces on the cli",
+	Short: "Work with Namespaces from the cli",
 	Long: `Examples:
 mim namespace ls
 mim namespace list

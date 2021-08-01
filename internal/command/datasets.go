@@ -26,7 +26,7 @@ import (
 var DatasetCmd = &cobra.Command{
 	Use:     "dataset",
 	Aliases: []string{"datasets"},
-	Short:   "Manage datahub datasets from cli",
+	Short:   "Manage datahub datasets from the cli",
 	Long: `Manage datahub datasets from cli such as add, delete, describe and so on. See available Commands.
 Examples:
 mim dataset list

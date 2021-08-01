@@ -26,7 +26,7 @@ import (
 var ContentCmd = &cobra.Command{
 	Use:     "content",
 	Aliases: []string{"contents"},
-	Short:   "Manage datahub content from cli",
+	Short:   "Manage datahub content from the cli",
 	Long: `Manage datahub content from cli such as add, delete, describe and so on. See available Commands.
 Examples:
 mim content list

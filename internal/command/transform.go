@@ -26,7 +26,7 @@ import (
 var TransformCmd = &cobra.Command{
 	Use: "transform",
 
-	Short: "Work with Transformations on the cli",
+	Short: "Work with Transformations from the cli",
 	Long: `Examples:
 mim transform import
 mim transform test

@@ -70,6 +70,7 @@ func addCommands() {
 	RootCmd.AddCommand(command.QueryCmd)
 	RootCmd.AddCommand(command.NamespaceCmd)
 	RootCmd.AddCommand(command.CompletionCmd)
+	RootCmd.AddCommand(command.TxnsCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.

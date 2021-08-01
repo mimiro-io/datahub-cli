@@ -27,7 +27,7 @@ import (
 var JobsCmd = &cobra.Command{
 	Use:     "job",
 	Aliases: []string{"jobs"},
-	Short:   "Manage datahub jobs from cli",
+	Short:   "Manage datahub jobs from the cli",
 	Long: `See available Commands.
 Examples:
 	min job list
