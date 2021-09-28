@@ -50,21 +50,24 @@ to quickly create a Cobra application.`,
 
 		pterm.EnableDebugMessages()
 
-		id, err := cmd.Flags().GetString("id")
+		idOrTitle, err := cmd.Flags().GetString("id")
 		utils.HandleError(err)
-		if len(args) > 0 && id == "" {
-			id = args[0]
+		if len(args) > 0 && idOrTitle == "" {
+			idOrTitle = args[0]
 		}
 
-		if id == "" {
+		if idOrTitle == "" {
 			pterm.Warning.Println("You must provide an id")
 			pterm.Println()
 			os.Exit(1)
 		}
 
-		pterm.DefaultSection.Printf("Get description of job " + id + " on " + server)
+		pterm.DefaultSection.Printf("Get description of job " + idOrTitle + " on " + server)
 
 		jobManager := api.NewJobManager(server, token)
+
+		id := ResolveId(server,token, idOrTitle)
+
 		job, err := jobManager.GetJob(id)
 		utils.HandleError(err)
 

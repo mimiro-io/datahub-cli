@@ -32,13 +32,17 @@ type JobTrigger struct {
 	MonitoredDataset string `json:"monitoredDataset"`
 }
 type Job struct {
-	Id        string                 `json:"id"`
-	Source    map[string]interface{} `json:"source"`
-	Sink      map[string]interface{} `json:"sink"`
-	Transform map[string]interface{} `json:"transform"`
-	Triggers  []JobTrigger           `json:"triggers"`
-	Paused    bool                   `json:"paused"`
-	BatchSize int                    `json:"batchSize"`
+	Title 	         string                 `json:"title"`
+	Id               string                 `json:"id"`
+	Description      string                 `json:"description"`
+	Tags             []string               `json:"tags"`
+	Source           map[string]interface{} `json:"source"`
+	Sink             map[string]interface{} `json:"sink"`
+	Transform        map[string]interface{} `json:"transform"`
+	Triggers         []JobTrigger           `json:"triggers"`
+	Paused           bool                   `json:"paused"`
+	BatchSize        int                    `json:"batchSize"`
+
 }
 
 type JobHistory struct {
