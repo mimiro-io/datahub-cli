@@ -89,11 +89,11 @@ func filterJobs(jobOutputs []api.JobOutput, filters string) []api.JobOutput {
 	var tags []string
 	var titles []string
 	if strings.Contains(filters, "tags=") || strings.Contains(filters, "tag="){
-		tags = strings.Split(strings.Trim(filters, "tags="),",")
+		tags = strings.Split(strings.TrimPrefix(strings.TrimPrefix(filters, "tags="), "tag="),",")
 	}
 
 	if strings.Contains(filters, "title="){
-		titles = strings.Split(strings.Trim(filters, "title="),",")
+		titles = strings.Split(strings.TrimPrefix(filters, "title="),",")
 	}
 	filterList := strings.Split(filters, ",")
 
@@ -150,7 +150,7 @@ func objectContains(object []api.JobOutput, id string ) bool{
 
 func listContains(s []string, str string) bool {
 	for _, v := range s {
-		if v == str {
+		if strings.Contains(v, str){
 			return true
 		}
 	}
