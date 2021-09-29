@@ -57,16 +57,15 @@ to quickly create a Cobra application.`,
 		}
 
 		if idOrTitle == "" {
-			pterm.Warning.Println("You must provide an id")
+			pterm.Warning.Println("You must provide a job title or id")
 			pterm.Println()
 			os.Exit(1)
 		}
+		id := ResolveId(server,token, idOrTitle)
 
-		pterm.DefaultSection.Printf("Get description of job " + idOrTitle + " on " + server)
+		pterm.DefaultSection.Printf("Get description of job with id: " + id + " (" + idOrTitle + ") on " + server)
 
 		jobManager := api.NewJobManager(server, token)
-
-		id := ResolveId(server,token, idOrTitle)
 
 		job, err := jobManager.GetJob(id)
 		utils.HandleError(err)

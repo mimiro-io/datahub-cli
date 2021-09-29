@@ -37,14 +37,15 @@ var HistoryCmd = &cobra.Command{
 		}
 
 		if idOrTitle == "" {
-			pterm.Warning.Println("You must provide an id")
+			pterm.Warning.Println("You must provide a job title or id")
 			pterm.Println()
 			os.Exit(1)
 		}
 
-		pterm.DefaultSection.Printf("Get history of job " + idOrTitle + " on " + server)
-
 		id := ResolveId(server,token, idOrTitle)
+
+		pterm.DefaultSection.Printf("Get history of job with id: " + id + " (" + idOrTitle + ") on " + server)
+
 
 		hist := getHistory(id, server, token)
 		utils.HandleError(err)

@@ -81,7 +81,7 @@ This command is the simplest command, and it is used to show a list of all serve
 mim jobs list --verbose
 ```
 
-By using the --verbose flag you can also get out more rows in the list. the extra parameters are
+By using --verbose more columns can be displayed. the extra columns are:
 
 * Id
 * Triggers - > = incremental, >> = fullsync, cyan=schedule, lightblue=onchange

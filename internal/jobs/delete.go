@@ -59,11 +59,11 @@ to quickly create a Cobra application.`,
 
 		pterm.EnableDebugMessages()
 
-		pterm.DefaultSection.Println("Deleting job " + server + "/jobs/" + idOrTitle)
-
 		id := ResolveId(server,token, idOrTitle)
+		pterm.DefaultSection.Println("Deleting job with id:"+ id + "(" + idOrTitle + ")")
+
 		if confirm {
-			pterm.DefaultSection.Printf("Delete job with job id " + idOrTitle + " on " + server + ", please type (y)es or (n)o and then press enter:")
+			pterm.DefaultSection.Printf("Delete job with job id: " + id + " (" + idOrTitle + ") on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
 				err = utils.DeleteRequest(server, token, fmt.Sprintf("/jobs/%s", id))
 				utils.HandleError(err)

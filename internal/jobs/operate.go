@@ -63,9 +63,10 @@ to quickly create a Cobra application.`,
 		since, err := cmd.Flags().GetString("since")
 		utils.HandleError(err)
 
-		pterm.DefaultSection.Printf("Execute operation " + operation + " on job with jobid " + idOrTitle + " on " + server)
-		pterm.Println()
 		id := ResolveId(server, token, idOrTitle)
+
+		pterm.DefaultSection.Printf("Execute operation " + operation + " on job with id: " + id + " (" + idOrTitle + ") on " + server)
+		pterm.Println()
 		if operation == "run" {
 			// is job running?
 			running, err := getStatus(id, server, token)
