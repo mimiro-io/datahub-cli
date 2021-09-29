@@ -17,6 +17,7 @@ package jobs
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -302,6 +303,18 @@ func buildOutput(output []api.JobOutput, format string) [][]string{
 			lastError)
 		out = append(out, line)
 	}
+
+	//sorting the list since it is sorted on ids, but we want it to sort on titles
+	sort.Slice(out[:], func(i, j int) bool {
+		for x := range out[i] {
+			if out[i][x] == out[j][x] {
+				continue
+			}
+			return out[i][x] < out[j][x]
+		}
+		return false
+	})
+
 	return out
 }
 
