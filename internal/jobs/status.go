@@ -53,14 +53,16 @@ mim jobs status
 
 		pterm.EnableDebugMessages()
 
-		id, err := cmd.Flags().GetString("id")
+		idOrTitle, err := cmd.Flags().GetString("id")
 		utils.HandleError(err)
-		if id == "" && len(args) > 0 {
-			id = args[0]
+		if idOrTitle == "" && len(args) > 0 {
+			idOrTitle = args[0]
 		}
 
-		if id != "" {
-			pterm.DefaultSection.Printf("Get status on job with job id " + id + " on " + server)
+		id := ResolveId(server, token, idOrTitle)
+
+		if idOrTitle != "" {
+			pterm.DefaultSection.Printf("Get status on job with job id: " + id + " (" + idOrTitle + ") on " + server)
 		} else {
 			pterm.DefaultSection.Printf("Get status on all running jobs on " + server)
 		}

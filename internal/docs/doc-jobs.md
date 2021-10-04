@@ -63,19 +63,52 @@ mim jobs list
 
 This command is the simplest command, and it is used to show a list of all server jobs.
 
-| Id   | Source   | Transform   | Sink   | Paused   | Triggers   |  Last Run   | Last Duration   | Error   |
-| --- | ------ | --------- | ---- | ------ | ------------------ | -------- | ------------ | ----- |
-| test-import | DatasetSource |   | DatasetSink | false | > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms | |
+| Title          | Paused | Tags         |Source  | Transform | Sink    | Triggers     | Last Run                  | Last Duration | Error |
+|----------------|--------|--------------|--------|-----------|---------|--------------|---------------------------|---------------|-------|
+| test-import    | false  | import,tests |Dataset |           | Dataset |' > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+| persons-import | false  | import       |Http    |           | Dataset |' > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms          |       |
 
- * Id - This is the job id
+ * Title - This is the job title
+ * Paused - Is the job paused or not
  * Source - Dataset source
  * Transform - Dataset transform if any
  * Sink - Dataset sink
- * Paused - Is the job paused or not
- * Triggers - > = incremental, >> = fullsync, cyan=schedule, lightblue=onchange
  * Last Run - When the job last was run
  * Last Duration - How long did the last job run
  * Error - If any errors occurred, they are shown here
+
+```
+mim jobs list --verbose
+```
+
+By using --verbose more columns can be displayed. the extra columns are:
+
+* Id
+* Triggers - > = incremental, >> = fullsync, cyan=schedule, lightblue=onchange
+
+```
+mim jobs list --filter persons
+```
+This command gives you a subset of the jobs that exist based on filtering criteria.
+
+| Title          | Paused | Tags         |Source  | Transform | Sink    | Triggers     | Last Run                  | Last Duration | Error |
+|----------------|--------|--------------|--------|-----------|---------|--------------|---------------------------|---------------|-------|
+| persons-import | false  | import       |Dataset |           | Dataset |' > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+
+```
+mim jobs list --filter title=persons
+```
+and
+```
+mim jobs list --filter tags=test
+```
+
+will give you a subset where the title has "persons" in it or tags having "test" in it.
+
+You can also have multiple search criteria in a filter i.e:
+```
+mim jobs list --filter persons,test,foo,bar
+```
 
 ## Add
 

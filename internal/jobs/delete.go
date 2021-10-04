@@ -41,15 +41,15 @@ to quickly create a Cobra application.`,
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)
 
-		id, err := cmd.Flags().GetString("id")
+		idOrTitle, err := cmd.Flags().GetString("id")
 		utils.HandleError(err)
 
 		if len(args) > 0 {
 			// use this as id
-			id = args[0]
+			idOrTitle = args[0]
 		}
 
-		if id == "" {
+		if idOrTitle == "" {
 			pterm.Error.Println("You must provide an job id")
 			os.Exit(1)
 		}
@@ -59,10 +59,11 @@ to quickly create a Cobra application.`,
 
 		pterm.EnableDebugMessages()
 
-		pterm.DefaultSection.Println("Deleting job " + server + "/jobs/" + id)
+		id := ResolveId(server,token, idOrTitle)
+		pterm.DefaultSection.Println("Deleting job with id: "+ id + " (" + idOrTitle + ") ")
 
 		if confirm {
-			pterm.DefaultSection.Printf("Delete job with job id " + id + " on " + server + ", please type (y)es or (n)o and then press enter:")
+			pterm.DefaultSection.Printf("Delete job with job id: " + id + " (" + idOrTitle + ") on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
 				err = utils.DeleteRequest(server, token, fmt.Sprintf("/jobs/%s", id))
 				utils.HandleError(err)
