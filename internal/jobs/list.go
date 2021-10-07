@@ -68,11 +68,15 @@ to quickly create a Cobra application.`,
 		if filter == "" && len(args) > 0 {
 			filter = args[0]
 		}
+
+		filterMode, err := cmd.Flags().GetString("filterMode")
+		utils.HandleError(err)
+
 		output, err := listJobs(jobs, history)
 		utils.HandleError(err)
 
 		if filter != "" {
-			output = filterJobs(output, filter)
+			output = filterJobs(output, filter, filterMode)
 		}
 
 		verbose, err := cmd.Flags().GetBool("verbose")
@@ -93,7 +97,7 @@ type jobFilter struct {
 	pattern     []string
 }
 
-func filterJobs(jobOutputs []api.JobOutput, filters string) []api.JobOutput {
+func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) []api.JobOutput {
 
 	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:+ ]+[,]?)+);?")
 	matches := pattern.FindAllStringSubmatch(filters, -1)
@@ -107,89 +111,19 @@ func filterJobs(jobOutputs []api.JobOutput, filters string) []api.JobOutput {
 
 	output := make([]api.JobOutput, 0)
 
-	for _, jobOutput := range jobOutputs {
-
-		for _, filter := range sortedFilters {
-			switch filter.jobProperty {
-			case "id", "title":
-				if matchProperty(jobOutput.Job.Id, filter.pattern) {
-					output = appendJobOutput(output, jobOutput)
-				}
-				if matchProperty(jobOutput.Job.Title, filter.pattern) {
-					output = appendJobOutput(output, jobOutput)
-				}
-			case "paused":
-				parsedBool, _ := strconv.ParseBool(filter.pattern[0])
-				if jobOutput.Job.Paused == parsedBool {
-					output = appendJobOutput(output, jobOutput)
-				}
-			case "tag", "tags":
-				for _, tag := range jobOutput.Job.Tags {
-					if matchProperty(tag, filter.pattern) {
-						output = appendJobOutput(output, jobOutput)
-					}
-				}
-			case "source":
-				if matchProperty(jobOutput.Job.Source["Type"].(string), filter.pattern) {
-					output = appendJobOutput(output, jobOutput)
-				}
-			case "sink":
-				if matchProperty(jobOutput.Job.Sink["Type"].(string), filter.pattern) {
-					output = appendJobOutput(output, jobOutput)
-				}
-			case "transform":
-				transform := jobOutput.Job.Transform
-				if transform != nil {
-					if matchProperty(jobOutput.Job.Transform["Type"].(string), filter.pattern) {
-						output = appendJobOutput(output, jobOutput)
-					}
-				}
-			case "error":
-				if jobOutput.History != nil {
-					if matchProperty(jobOutput.History.LastError, filter.pattern) {
-						output = appendJobOutput(output, jobOutput)
-					}
-				}
-			case "duration":
-				if jobOutput.History != nil {
-					lastDuration := jobOutput.History.End.Sub(jobOutput.History.Start)
-					inputDuration, err := time.ParseDuration(filter.pattern[0])
-					if err != nil {
-						utils.HandleError(errors.New("unable to parse duration filter"))
-					}
-					switch filter.operator {
-					case "<":
-						if lastDuration < inputDuration {
-							output = appendJobOutput(output, jobOutput)
-						}
-					case ">":
-						if lastDuration > inputDuration {
-							output = appendJobOutput(output, jobOutput)
-						}
-					}
-				}
-			case "lastrun":
-				if jobOutput.History != nil {
-					lastRun := jobOutput.History.Start
-					inputTimestamp, err := time.Parse("2006-01-02T15:04:05-07:00", filter.pattern[0])
-					if err != nil {
-						utils.HandleError(errors.New("unable to parse duration filter"))
-					}
-					switch filter.operator {
-					case "<":
-						if lastRun.Before(inputTimestamp) {
-							output = appendJobOutput(output, jobOutput)
-						}
-					case ">":
-						if lastRun.After(inputTimestamp) {
-							output = appendJobOutput(output, jobOutput)
-						}
-					}
-				}
-
+	if sortedFilters != nil {
+		if filterMode == "inclusive" {
+			for _, filter := range sortedFilters {
+				output = append(output, processFilter(jobOutputs, filter)...)
+			}
+		} else {
+			output = jobOutputs
+			for _, filter := range sortedFilters {
+				output = processFilter(output, filter)
 			}
 		}
-		if sortedFilters == nil {
+	} else {
+		for _, jobOutput := range jobOutputs {
 			simpleFilters := strings.Split(filters, ",")
 			if matchProperty(jobOutput.Job.Id, simpleFilters) {
 				output = appendJobOutput(output, jobOutput)
@@ -202,6 +136,91 @@ func filterJobs(jobOutputs []api.JobOutput, filters string) []api.JobOutput {
 					output = appendJobOutput(output, jobOutput)
 				}
 			}
+		}
+	}
+	return output
+}
+
+func processFilter(jobList []api.JobOutput, filter jobFilter) []api.JobOutput {
+	var output []api.JobOutput
+	for _, jobOutput := range jobList {
+		switch filter.jobProperty {
+		case "id", "title":
+			if matchProperty(jobOutput.Job.Id, filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+			if matchProperty(jobOutput.Job.Title, filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "paused":
+			parsedBool, _ := strconv.ParseBool(filter.pattern[0])
+			if jobOutput.Job.Paused == parsedBool {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "tag", "tags":
+			for _, tag := range jobOutput.Job.Tags {
+				if matchProperty(tag, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+			}
+		case "source":
+			if matchProperty(jobOutput.Job.Source["Type"].(string), filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "sink":
+			if matchProperty(jobOutput.Job.Sink["Type"].(string), filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "transform":
+			transform := jobOutput.Job.Transform
+			if transform != nil {
+				if matchProperty(jobOutput.Job.Transform["Type"].(string), filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+			}
+		case "error":
+			if jobOutput.History != nil {
+				if matchProperty(jobOutput.History.LastError, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+			}
+		case "duration":
+			if jobOutput.History != nil {
+				lastDuration := jobOutput.History.End.Sub(jobOutput.History.Start)
+				inputDuration, err := time.ParseDuration(filter.pattern[0])
+				if err != nil {
+					utils.HandleError(errors.New("unable to parse duration filter"))
+				}
+				switch filter.operator {
+				case "<":
+					if lastDuration < inputDuration {
+						output = appendJobOutput(output, jobOutput)
+					}
+				case ">":
+					if lastDuration > inputDuration {
+						output = appendJobOutput(output, jobOutput)
+					}
+				}
+			}
+		case "lastrun":
+			if jobOutput.History != nil {
+				lastRun := jobOutput.History.Start
+				inputTimestamp, err := time.Parse("2006-01-02T15:04:05-07:00", filter.pattern[0])
+				if err != nil {
+					utils.HandleError(errors.New("unable to parse duration filter"))
+				}
+				switch filter.operator {
+				case "<":
+					if lastRun.Before(inputTimestamp) {
+						output = appendJobOutput(output, jobOutput)
+					}
+				case ">":
+					if lastRun.After(inputTimestamp) {
+						output = appendJobOutput(output, jobOutput)
+					}
+				}
+			}
+
 		}
 	}
 	return output
@@ -465,4 +484,5 @@ func ResolveId(server string, token string, title string) string {
 func init() {
 	ListCmd.PersistentFlags().Bool("verbose", false, "Verbose output of jobs list")
 	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter in all jobs with a comma separated string i.e  'tags=foo,bar' or 'title=foo,bar'. '--filter foo,bar' gives you a result set across titles and tags")
+	ListCmd.PersistentFlags().StringP("filterMode", "", "exclusive", "Filter mode used by the filter flag. Default is exclusive meaning only results matching all filters will be returned. Use 'inclusive' to return all results matching one or more filters")
 }
