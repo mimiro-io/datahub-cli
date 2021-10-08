@@ -76,7 +76,8 @@ to quickly create a Cobra application.`,
 		utils.HandleError(err)
 
 		if filter != "" {
-			output = filterJobs(output, filter, filterMode)
+			output, err = filterJobs(output, filter, filterMode)
+			utils.HandleError(err)
 		}
 
 		verbose, err := cmd.Flags().GetBool("verbose")
@@ -97,19 +98,21 @@ type jobFilter struct {
 	pattern     []string
 }
 
-func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) []api.JobOutput {
+func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) ([]api.JobOutput, error) {
 
 	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:+ ]+[,]?)+);?")
 	matches := pattern.FindAllStringSubmatch(filters, -1)
 	var sortedFilters []jobFilter
 
-	if matches != nil {
+	output := make([]api.JobOutput, 0)
+
+	if matches == nil {
+		return output, errors.New("unable to parse filter query")
+	} else {
 		for _, match := range matches {
 			sortedFilters = append(sortedFilters, jobFilter{jobProperty: match[1], operator: match[2], pattern: strings.Split(match[3], ",")})
 		}
 	}
-
-	output := make([]api.JobOutput, 0)
 
 	if sortedFilters != nil {
 		if filterMode == "inclusive" {
@@ -122,23 +125,8 @@ func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) [
 				output = processFilter(output, filter)
 			}
 		}
-	} else {
-		for _, jobOutput := range jobOutputs {
-			simpleFilters := strings.Split(filters, ",")
-			if matchProperty(jobOutput.Job.Id, simpleFilters) {
-				output = appendJobOutput(output, jobOutput)
-			}
-			if matchProperty(jobOutput.Job.Title, simpleFilters) {
-				output = appendJobOutput(output, jobOutput)
-			}
-			for _, tag := range jobOutput.Job.Tags {
-				if matchProperty(tag, simpleFilters) {
-					output = appendJobOutput(output, jobOutput)
-				}
-			}
-		}
 	}
-	return output
+	return output, nil
 }
 
 func processFilter(jobList []api.JobOutput, filter jobFilter) []api.JobOutput {
@@ -242,25 +230,6 @@ func appendJobOutput(outputArray []api.JobOutput, output api.JobOutput) []api.Jo
 		}
 	}
 	return append(outputArray, output)
-}
-
-func objectContains(object []api.JobOutput, id string) bool {
-	exists := false
-	for _, o := range object {
-		if o.Job.Id == id {
-			exists = true
-		}
-	}
-	return exists
-}
-
-func listContains(s []string, str string) bool {
-	for _, v := range s {
-		if strings.Contains(v, str) {
-			return true
-		}
-	}
-	return false
 }
 
 func getTransform(job api.Job) string {
