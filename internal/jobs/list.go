@@ -100,7 +100,7 @@ type jobFilter struct {
 
 func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) ([]api.JobOutput, error) {
 
-	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:+ ]+[,]?)+);?")
+	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:@+ ]+[,]?)+);?")
 	matches := pattern.FindAllStringSubmatch(filters, -1)
 	var sortedFilters []jobFilter
 
@@ -208,7 +208,18 @@ func processFilter(jobList []api.JobOutput, filter jobFilter) []api.JobOutput {
 					}
 				}
 			}
-
+		case "triggers", "trigger":
+			for _, trigger := range jobOutput.Job.Triggers {
+				if matchProperty(trigger.Schedule, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+				if matchProperty(trigger.MonitoredDataset, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+				if matchProperty(trigger.JobType, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+			}
 		}
 	}
 	return output
