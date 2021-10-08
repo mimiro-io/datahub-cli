@@ -63,10 +63,13 @@ mim jobs list
 
 This command is the simplest command, and it is used to show a list of all server jobs.
 
-| Title          | Paused | Tags         |Source  | Transform | Sink    | Triggers     | Last Run                  | Last Duration | Error |
-|----------------|--------|--------------|--------|-----------|---------|--------------|---------------------------|---------------|-------|
-| test-import    | false  | import,tests |Dataset |           | Dataset |' > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms          |       |
-| persons-import | false  | import       |Http    |           | Dataset |' > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+| Title          | Paused | Tags         |Source  | Transform | Sink    | Last Run                  | Last Duration | Error |
+|----------------|--------|--------------|--------|-----------|---------|---------------------------|---------------|-------|
+| test-import    | false  | import,tests |http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 2m            |       |
+| import-person  | false  | import       |Http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+| import-order   | false  | import       |Http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+| person-crm     | false  | crm          |Dataset |           | Http    | 2020-11-19T14:56:17+01:00 | 379ms         |       |
+| order-crm      | false  | crm          |Dataset |           | Http    | 2020-11-19T14:56:17+01:00 | 30ms          |       |
 
  * Title - This is the job title
  * Paused - Is the job paused or not
@@ -84,30 +87,66 @@ mim jobs list --verbose
 By using --verbose more columns can be displayed. the extra columns are:
 
 * Id
-* Triggers - > = incremental, >> = fullsync, cyan=schedule, lightblue=onchange
-
+* Triggers
 ```
-mim jobs list --filter persons
-```
-This command gives you a subset of the jobs that exist based on filtering criteria.
-
-| Title          | Paused | Tags         |Source  | Transform | Sink    | Triggers     | Last Run                  | Last Duration | Error |
-|----------------|--------|--------------|--------|-----------|---------|--------------|---------------------------|---------------|-------|
-| persons-import | false  | import       |Dataset |           | Dataset |' > @every 1m | 2020-11-19T14:56:17+01:00 | 30ms          |       |
-
-```
-mim jobs list --filter title=persons
-```
-and
-```
-mim jobs list --filter tags=test
+>         = incremental
+>>        = fullsync
+cyan      = schedule
+lightblue = onchange
 ```
 
-will give you a subset where the title has "persons" in it or tags having "test" in it.
-
-You can also have multiple search criteria in a filter i.e:
+### Filter
+The list command support filtering the result by pattern matching.
 ```
-mim jobs list --filter persons,test,foo,bar
+mim jobs list --filter "title=person"
+```
+This command will return a subset of the jobs that exist based on filtering criteria.
+
+| Title          | Paused | Tags         |Source  | Transform | Sink    | Last Run                  | Last Duration | Error |
+|----------------|--------|--------------|--------|-----------|---------|---------------------------|---------------|-------|
+| import-person  | false  | import       |Http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+| person-crm     | false  | crm          |Dataset |           | Http    | 2020-11-19T14:56:17+01:00 | 379ms         |       |
+
+The filter is exclusive by default, meaning all filters must match for a row to be returned. To make it inclusive (return all results matching one or more filters), add `--filterMode inclusive`
+```
+mim jobs list --filter "tags=tests;source=http"
+```
+This will return the following:
+
+| Title          | Paused | Tags         |Source  | Transform | Sink    | Last Run                  | Last Duration | Error |
+|----------------|--------|--------------|--------|-----------|---------|---------------------------|---------------|-------|
+| test-import    | false  | import,tests |http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 2m            |       |
+
+
+
+It is also possible to add multiple values for a single filter:
+```
+mim jobs ls --filter "source=http,dataset;sink=http"
+```
+This will return rows matching source=http and sink=http as well as source=dataset and sink=http:
+
+| Title          | Paused | Tags         |Source  | Transform | Sink    | Last Run                  | Last Duration | Error |
+|----------------|--------|--------------|--------|-----------|---------|---------------------------|---------------|-------|
+| test-import    | false  | import,tests |http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 2m            |       |
+| import-person  | false  | import       |Http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+| import-order   | false  | import       |Http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+| person-crm     | false  | crm          |Dataset |           | Http    | 2020-11-19T14:56:17+01:00 | 379ms         |       |
+| order-crm      | false  | crm          |Dataset |           | Http    | 2020-11-19T14:56:17+01:00 | 30ms          |       |
+
+
+All columns can be used for filtering. See below list for allowed syntax for each column:
+```
+title=mystringhere
+tags=mytag
+id=myidstring
+paused=true
+source=dataset
+sink=http
+transform=javascript
+error=my error message
+duration>10s or duration<30ms
+lastrun<2020-11-19T14:56:17+01:00 or lastrun>2020-11-19T14:56:17+01:00
+triggers=@every 60 or triggers=fullsync or triggers=person.Crm
 ```
 
 ## Add
