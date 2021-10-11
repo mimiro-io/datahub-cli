@@ -1,5 +1,9 @@
 # Change Log
 
+## 11/10/2021
+
+* Support for filtering on all columns in the job list by using `mim jobs ls --filter "source=http"`
+
 ## 29/09/2021
 
 * `mim jobs ls` or `mim jobs list` now has the ability to filter in existing jobs. by using `mim jobs ls --filter foo,bar` you will only get the result set that includes either foo or bar.
