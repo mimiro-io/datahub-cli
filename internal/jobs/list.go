@@ -16,8 +16,11 @@ package jobs
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,17 +68,22 @@ to quickly create a Cobra application.`,
 		if filter == "" && len(args) > 0 {
 			filter = args[0]
 		}
+
+		filterMode, err := cmd.Flags().GetString("filterMode")
+		utils.HandleError(err)
+
 		output, err := listJobs(jobs, history)
 		utils.HandleError(err)
 
-		if filter != ""{
-			output = filterJobs(output, filter)
+		if filter != "" {
+			output, err = filterJobs(output, filter, filterMode)
+			utils.HandleError(err)
 		}
 
 		verbose, err := cmd.Flags().GetBool("verbose")
 		if verbose {
 			printOutput(output, "verbose")
-		}else{
+		} else {
 			printOutput(output, format)
 		}
 
@@ -84,52 +92,132 @@ to quickly create a Cobra application.`,
 	TraverseChildren: true,
 }
 
-func filterJobs(jobOutputs []api.JobOutput, filters string) []api.JobOutput {
+type jobFilter struct {
+	jobProperty string
+	operator    string
+	pattern     []string
+}
 
-	var tags []string
-	var titles []string
-	if strings.Contains(filters, "tags=") || strings.Contains(filters, "tag="){
-		tags = strings.Split(strings.TrimPrefix(strings.TrimPrefix(filters, "tags="), "tag="),",")
-	}
+func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) ([]api.JobOutput, error) {
 
-	if strings.Contains(filters, "title="){
-		titles = strings.Split(strings.TrimPrefix(filters, "title="),",")
-	}
-	filterList := strings.Split(filters, ",")
+	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:@+ ]+[,]?)+);?")
+	matches := pattern.FindAllStringSubmatch(filters, -1)
+	var sortedFilters []jobFilter
 
 	output := make([]api.JobOutput, 0)
 
-	for _, jobOutput := range jobOutputs {
-		id := jobOutput.Job.Id
-		title := jobOutput.Job.Title
-		jobTags := jobOutput.Job.Tags
-		if titles != nil{ //searches for titles and ids containing the filter
-			for _, filter := range titles{
-				if strings.Contains(id, filter) || strings.Contains(title, filter){
-					if !objectContains(output, jobOutput.Job.Id) {
-						output = append(output, jobOutput)
+	if matches == nil {
+		return output, errors.New("unable to parse filter query")
+	} else {
+		for _, match := range matches {
+			sortedFilters = append(sortedFilters, jobFilter{jobProperty: match[1], operator: match[2], pattern: strings.Split(match[3], ",")})
+		}
+	}
+
+	if sortedFilters != nil {
+		if filterMode == "inclusive" {
+			for _, filter := range sortedFilters {
+				output = append(output, processFilter(jobOutputs, filter)...)
+			}
+		} else {
+			output = jobOutputs
+			for _, filter := range sortedFilters {
+				output = processFilter(output, filter)
+			}
+		}
+	}
+	return output, nil
+}
+
+func processFilter(jobList []api.JobOutput, filter jobFilter) []api.JobOutput {
+	var output []api.JobOutput
+	for _, jobOutput := range jobList {
+		switch filter.jobProperty {
+		case "id", "title":
+			if matchProperty(jobOutput.Job.Id, filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+			if matchProperty(jobOutput.Job.Title, filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "paused":
+			parsedBool, _ := strconv.ParseBool(filter.pattern[0])
+			if jobOutput.Job.Paused == parsedBool {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "tag", "tags":
+			for _, tag := range jobOutput.Job.Tags {
+				if matchProperty(tag, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+			}
+		case "source":
+			if matchProperty(jobOutput.Job.Source["Type"].(string), filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "sink":
+			if matchProperty(jobOutput.Job.Sink["Type"].(string), filter.pattern) {
+				output = appendJobOutput(output, jobOutput)
+			}
+		case "transform":
+			transform := jobOutput.Job.Transform
+			if transform != nil {
+				if matchProperty(jobOutput.Job.Transform["Type"].(string), filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+			}
+		case "error":
+			if jobOutput.History != nil {
+				if matchProperty(jobOutput.History.LastError, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+			}
+		case "duration":
+			if jobOutput.History != nil {
+				lastDuration := jobOutput.History.End.Sub(jobOutput.History.Start)
+				inputDuration, err := time.ParseDuration(filter.pattern[0])
+				if err != nil {
+					utils.HandleError(errors.New("unable to parse duration filter"))
+				}
+				switch filter.operator {
+				case "<":
+					if lastDuration < inputDuration {
+						output = appendJobOutput(output, jobOutput)
+					}
+				case ">":
+					if lastDuration > inputDuration {
+						output = appendJobOutput(output, jobOutput)
 					}
 				}
 			}
-		} else if tags != nil { //searches for tags containing the filter
-			for _, filter := range tags{
-				if listContains(jobTags,filter){
-					if !objectContains(output, jobOutput.Job.Id) {
-						output = append(output, jobOutput)
+		case "lastrun":
+			if jobOutput.History != nil {
+				lastRun := jobOutput.History.Start
+				inputTimestamp, err := time.Parse("2006-01-02T15:04:05-07:00", filter.pattern[0])
+				if err != nil {
+					utils.HandleError(errors.New("unable to parse duration filter"))
+				}
+				switch filter.operator {
+				case "<":
+					if lastRun.Before(inputTimestamp) {
+						output = appendJobOutput(output, jobOutput)
+					}
+				case ">":
+					if lastRun.After(inputTimestamp) {
+						output = appendJobOutput(output, jobOutput)
 					}
 				}
 			}
-		}else { //searches for titles, ids and tags containing the filter
-			for _, filter := range filterList{
-				if strings.Contains(id, filter) || strings.Contains(title, filter){
-					if !objectContains(output, jobOutput.Job.Id) {
-						output = append(output, jobOutput)
-					}
+		case "triggers", "trigger":
+			for _, trigger := range jobOutput.Job.Triggers {
+				if matchProperty(trigger.Schedule, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
 				}
-				if listContains(jobTags,filter){
-					if !objectContains(output, jobOutput.Job.Id) {
-						output = append(output, jobOutput)
-					}
+				if matchProperty(trigger.MonitoredDataset, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
+				}
+				if matchProperty(trigger.JobType, filter.pattern) {
+					output = appendJobOutput(output, jobOutput)
 				}
 			}
 		}
@@ -137,24 +225,22 @@ func filterJobs(jobOutputs []api.JobOutput, filters string) []api.JobOutput {
 	return output
 }
 
-func objectContains(object []api.JobOutput, id string ) bool{
-	exists := false
-	for _, o := range object{
-		if o.Job.Id == id {
-			exists = true
-		}
-	}
-	return exists
-}
-
-
-func listContains(s []string, str string) bool {
-	for _, v := range s {
-		if strings.Contains(v, str){
+func matchProperty(property string, patterns []string) bool {
+	for _, pattern := range patterns {
+		if strings.Contains(strings.ToLower(property), strings.ToLower(pattern)) {
 			return true
 		}
 	}
 	return false
+}
+
+func appendJobOutput(outputArray []api.JobOutput, output api.JobOutput) []api.JobOutput {
+	for _, jobOutput := range outputArray {
+		if jobOutput.Job.Id == output.Job.Id {
+			return outputArray
+		}
+	}
+	return append(outputArray, output)
 }
 
 func getTransform(job api.Job) string {
@@ -189,14 +275,13 @@ func printOutput(output []api.JobOutput, format string) {
 	}
 }
 
-func buildOutput(output []api.JobOutput, format string) [][]string{
+func buildOutput(output []api.JobOutput, format string) [][]string {
 	out := make([][]string, 0)
-	if format == "verbose"{
-		out = append(out, []string{"Id", "Title", "Paused",  "Tags", "Source", "Transform", "Sink", "Triggers", "Last Run", "Last Duration", "Error"})
+	if format == "verbose" {
+		out = append(out, []string{"Id", "Title", "Paused", "Tags", "Source", "Transform", "Sink", "Triggers", "Last Run", "Last Duration", "Error"})
 	} else {
-		out = append(out, []string{"Title", "Paused",  "Tags", "Source", "Transform", "Sink", "Last Run", "Last Duration", "Error"})
+		out = append(out, []string{"Title", "Paused", "Tags", "Source", "Transform", "Sink", "Last Run", "Last Duration", "Error"})
 	}
-
 
 	for _, row := range output {
 		lastRun := ""
@@ -213,52 +298,52 @@ func buildOutput(output []api.JobOutput, format string) [][]string{
 			lastError = strings.ReplaceAll(lastError, "\r\n", " ")
 			lastError = strings.ReplaceAll(lastError, "\n", " ")
 			if len(lastError) > 30 {
-				lastError = lastError[:30]+"..."
+				lastError = lastError[:30] + "..."
 			}
 		}
 
 		title = row.Job.Title
-		if title == ""{
+		if title == "" {
 			title = row.Job.Id
 		}
 
 		pausedColor := pterm.FgLightRed
-		if row.Job.Paused == false{
+		if row.Job.Paused == false {
 			pausedColor = pterm.FgDefault
 		}
 		var pausedItem = pterm.BulletListItem{
-			Level:       0,
-			Text:        fmt.Sprintf("%t", row.Job.Paused),
-			TextStyle:   pterm.NewStyle(pausedColor),
-			Bullet:      "",
+			Level:     0,
+			Text:      fmt.Sprintf("%t", row.Job.Paused),
+			TextStyle: pterm.NewStyle(pausedColor),
+			Bullet:    "",
 		}
 		pausedString, err := pterm.BulletListPrinter{}.WithItems([]pterm.BulletListItem{pausedItem}).Srender()
 		utils.HandleError(err)
 
-		if len(row.Job.Tags) > 0{
+		if len(row.Job.Tags) > 0 {
 			tags = strings.Join(row.Job.Tags, ",")
 		}
 		source := row.Job.Source["Type"].(string)
-		if source == "DatasetSource"{
+		if source == "DatasetSource" {
 			source = "Dataset"
 		}
-		if source == "HttpDatasetSource"{
+		if source == "HttpDatasetSource" {
 			source = "Http"
 		}
 		sink := row.Job.Sink["Type"].(string)
-		if sink == "DatasetSink"{
+		if sink == "DatasetSink" {
 			sink = "Dataset"
 		}
-		if sink == "HttpDatasetSink"{
+		if sink == "HttpDatasetSink" {
 			sink = "Http"
 		}
 		transform := getTransform(row.Job)
-		if transform == "JavascriptTransform"{
+		if transform == "JavascriptTransform" {
 			transform = "Javascript"
 		}
 		//line output for each row
-		var line  []string
-		if format == "verbose"{
+		var line []string
+		if format == "verbose" {
 			line = append(line, row.Job.Id)
 		}
 		line = append(line, title, strings.TrimSpace(pausedString), tags, source, transform, sink)
@@ -274,10 +359,10 @@ func buildOutput(output []api.JobOutput, format string) [][]string{
 			var item pterm.BulletListItem
 			if trigger.TriggerType == "onchange" {
 				item = pterm.BulletListItem{
-					Level:       0,
-					Text:        trigger.MonitoredDataset,
-					TextStyle:   pterm.NewStyle(pterm.FgLightBlue),
-					Bullet:      jobTypeBullet,
+					Level:     0,
+					Text:      trigger.MonitoredDataset,
+					TextStyle: pterm.NewStyle(pterm.FgLightBlue),
+					Bullet:    jobTypeBullet,
 				}
 			} else {
 				item = pterm.BulletListItem{
@@ -292,7 +377,7 @@ func buildOutput(output []api.JobOutput, format string) [][]string{
 			utils.HandleError(err)
 			items = append(items, strings.TrimSpace(itemString))
 		}
-		if format == "verbose"{
+		if format == "verbose" {
 			triggers := strings.Join(items, ";")
 			line = append(line, triggers)
 		}
@@ -354,7 +439,6 @@ func listJobs(jobs []byte, history []byte) ([]api.JobOutput, error) {
 	return output, nil
 }
 
-
 func ResolveId(server string, token string, title string) string {
 	id := title
 	allJobs, err := utils.GetRequest(server, token, "/jobs")
@@ -370,15 +454,15 @@ func ResolveId(server string, token string, title string) string {
 		out := api.JobOutput{
 			Job: job,
 		}
-		if out.Job.Title == title{
+		if out.Job.Title == title {
 			id = out.Job.Id
 		}
 	}
 	return id
 }
 
-
 func init() {
 	ListCmd.PersistentFlags().Bool("verbose", false, "Verbose output of jobs list")
-	ListCmd.PersistentFlags().StringP("filter", "","", "Filter in all jobs with a comma separated string i.e  'tags=foo,bar' or 'title=foo,bar'. '--filter foo,bar' gives you a result set across titles and tags" )
+	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar' or 'title=foo,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
+	ListCmd.PersistentFlags().StringP("filterMode", "", "exclusive", "Filter mode used by the filter flag. Default is exclusive meaning only results matching all filters will be returned. Use 'inclusive' to return all results matching one or more filters")
 }
