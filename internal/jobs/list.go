@@ -463,6 +463,6 @@ func ResolveId(server string, token string, title string) string {
 
 func init() {
 	ListCmd.PersistentFlags().Bool("verbose", false, "Verbose output of jobs list")
-	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter in all jobs with a comma separated string i.e  'tags=foo,bar' or 'title=foo,bar'. '--filter foo,bar' gives you a result set across titles and tags")
+	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar' or 'title=foo,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
 	ListCmd.PersistentFlags().StringP("filterMode", "", "exclusive", "Filter mode used by the filter flag. Default is exclusive meaning only results matching all filters will be returned. Use 'inclusive' to return all results matching one or more filters")
 }
