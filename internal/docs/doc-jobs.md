@@ -107,7 +107,10 @@ This command will return a subset of the jobs that exist based on filtering crit
 | import-person  | false  | import       |Http    |           | Dataset | 2020-11-19T14:56:17+01:00 | 30ms          |       |
 | person-crm     | false  | crm          |Dataset |           | Http    | 2020-11-19T14:56:17+01:00 | 379ms         |       |
 
-The filter is exclusive by default, meaning all filters must match for a row to be returned. To make it inclusive (return all results matching one or more filters), add `--filterMode inclusive`
+The filter is exclusive by default, meaning all filters must match for a row to be returned. To make it inclusive (return all results matching one or more filters), add `--filterMode inclusive`.
+
+
+Filters can be combined to narrow down the result even more. *Remember to use quotes when combining filters*
 ```
 mim jobs list --filter "tags=tests;source=http"
 ```
