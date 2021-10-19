@@ -110,7 +110,7 @@ func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) (
 		return output, errors.New("unable to parse filter query")
 	} else {
 		for _, match := range matches {
-			sortedFilters = append(sortedFilters, jobFilter{jobProperty: match[1], operator: match[2], pattern: strings.Split(match[3], ",")})
+			sortedFilters = append(sortedFilters, jobFilter{jobProperty: strings.ToLower(match[1]), operator: match[2], pattern: strings.Split(match[3], ",")})
 		}
 	}
 
