@@ -28,8 +28,9 @@ import (
 )
 
 type jobStatus struct {
-	JobId   string    `json:"jobId"`
-	Started time.Time `json:"started"`
+	JobId    string    `json:"jobId"`
+	JobTitle string    `json:"jobTitle"`
+	Started  time.Time `json:"started"`
 }
 
 // StatusCmd represents the staus command on a job
@@ -121,11 +122,11 @@ func renderBody(jobs []jobStatus, format string) {
 		fmt.Println(string(result))
 	default:
 		out := make([][]string, 0)
-		out = append(out, []string{"Id", "Started"})
+		out = append(out, []string{"Title", "Started"})
 
 		for _, row := range jobs {
 			out = append(out, []string{
-				row.JobId,
+				row.JobTitle,
 				fmt.Sprintf("%s", row.Started),
 			})
 		}
