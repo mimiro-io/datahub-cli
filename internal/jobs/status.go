@@ -28,8 +28,9 @@ import (
 )
 
 type jobStatus struct {
-	JobId   string    `json:"jobId"`
-	Started time.Time `json:"started"`
+	JobId    string    `json:"jobId"`
+	JobTitle string    `json:"jobTitle"`
+	Started  time.Time `json:"started"`
 }
 
 // StatusCmd represents the staus command on a job
@@ -59,12 +60,14 @@ mim jobs status
 			idOrTitle = args[0]
 		}
 
-		id := ResolveId(server, token, idOrTitle)
+		var id string
 
 		if idOrTitle != "" {
+			id := ResolveId(server, token, idOrTitle)
 			pterm.DefaultSection.Printf("Get status on job with job id: " + id + " (" + idOrTitle + ") on " + server)
 		} else {
 			pterm.DefaultSection.Printf("Get status on all running jobs on " + server)
+			id = ""
 		}
 		jobs, err := getStatus(id, server, token)
 		utils.HandleError(err)
@@ -119,11 +122,11 @@ func renderBody(jobs []jobStatus, format string) {
 		fmt.Println(string(result))
 	default:
 		out := make([][]string, 0)
-		out = append(out, []string{"Id", "Started"})
+		out = append(out, []string{"Title", "Started"})
 
 		for _, row := range jobs {
 			out = append(out, []string{
-				row.JobId,
+				row.JobTitle,
 				fmt.Sprintf("%s", row.Started),
 			})
 		}
