@@ -63,7 +63,7 @@ mim jobs status
 		var id string
 
 		if idOrTitle != "" {
-			id := ResolveId(server, token, idOrTitle)
+			id = ResolveId(server, token, idOrTitle)
 			pterm.DefaultSection.Printf("Get status on job with job id: " + id + " (" + idOrTitle + ") on " + server)
 		} else {
 			pterm.DefaultSection.Printf("Get status on all running jobs on " + server)
