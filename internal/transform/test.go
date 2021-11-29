@@ -20,15 +20,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/bcicen/jstream"
 	"github.com/dop251/goja"
+	"github.com/pterm/pterm"
+	"github.com/spf13/cobra"
+
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/datasets"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/queries"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
-	"github.com/pterm/pterm"
-	"github.com/spf13/cobra"
 )
 
 const wrapperJavascriptFunction = `
@@ -352,6 +354,7 @@ func hookEngine(server string, token string) *goja.Runtime {
 	engine.Set("NewEntity", tf.NewEntity)
 	engine.Set("IsValidEntity", tf.IsValidEntity)
 	engine.Set("ToString", tf.ToString)
+	engine.Set("AsEntity", tf.AsEntity)
 	return engine
 }
 

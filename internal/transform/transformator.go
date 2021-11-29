@@ -21,8 +21,9 @@ import (
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 
-	"github.com/mimiro-io/datahub-cli/internal/queries"
 	"github.com/pterm/pterm"
+
+	"github.com/mimiro-io/datahub-cli/internal/queries"
 )
 
 type transformer struct {
@@ -130,4 +131,22 @@ func (tf *transformer) IsValidEntity(entity *api.Entity) bool {
 		return false
 	}
 	return true
+}
+
+func (javascriptTransform *transformer) AsEntity(val interface{}) (res *api.Entity) {
+	if e, ok := val.(*api.Entity); ok {
+		res = e
+		return
+	}
+	if m, ok := val.(map[string]interface{}); ok {
+		defer func() {
+			if recover() != nil {
+				res = nil
+			}
+		}()
+		res = api.NewEntityFromMap(m)
+		return
+	}
+	res = nil
+	return
 }
