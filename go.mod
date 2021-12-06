@@ -6,7 +6,7 @@ require (
 	github.com/MichaelMure/go-term-markdown v0.1.4
 	github.com/alecthomas/chroma v0.9.1 // indirect
 	github.com/bcicen/jstream v1.0.1
-	github.com/dop251/goja v0.0.0-20210427212725-462d53687b0d
+	github.com/dop251/goja v0.0.0
 	github.com/evanw/esbuild v0.12.5
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/franela/goblin v0.0.0-20210113153425-413781f5e6c8
@@ -31,6 +31,8 @@ require (
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
 	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/text v0.3.6
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )
+
+replace github.com/dop251/goja => github.com/mimiro-io/goja v1.0.0-beta
