@@ -16,6 +16,7 @@ package datasets
 
 import (
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -62,7 +63,7 @@ mim jobs delete -i <id>
 		if confirm {
 			pterm.DefaultSection.Printf("Delete dataset with name " + name + " on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
-				err = utils.DeleteRequest(server, token, fmt.Sprintf("/datasets/%s", name))
+				err = web.DeleteRequest(server, token, fmt.Sprintf("/datasets/%s", name))
 				utils.HandleError(err)
 
 				pterm.Success.Println("Deleted dataset")
@@ -71,7 +72,7 @@ mim jobs delete -i <id>
 				pterm.Println("Aborted!")
 			}
 		} else {
-			err = utils.DeleteRequest(server, token, fmt.Sprintf("/datasets/%s", name))
+			err = web.DeleteRequest(server, token, fmt.Sprintf("/datasets/%s", name))
 			utils.HandleError(err)
 
 			pterm.Success.Println("Deleted dataset")

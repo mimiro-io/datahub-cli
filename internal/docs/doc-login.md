@@ -35,13 +35,34 @@ If you don't provide an alias, the server name is used as an alias, so you shoul
 add an alias.
 
 ```
-mim login add --server="https://my.datahub.server" --token="<valid token>" --alias="server1"
+mim login add --type=client --server="https://my.datahub.server" --token="<valid token>" --alias="server1"
 ```
 
 You cannot change the alias on an existing profile, you need to delete it first.
 
-Since a token has a limited validity, we suggest you use a setup with a clientId and a clientSecret
-instead.
+There are 3 types of logins that are supported: token, client, user.
+
+ * token - you must provide a valid token yourself - this is the worst option
+ * client - this is a combination if a client id and secret - second worst option
+ * user - log in as yourself - this is the best option
+
+### User login profile
+
+To use this option, you must provide a (DataHub) server and a login Authorizer.
+For a user login type, the Authorizer should point to root, a "/login"-path will be automatically added.
+
+Example:
+```
+mim login add --type=user --server="https://my.datahub.server" --authorizer="https://auth.mimiro.io"
+```
+
+As long as your authorizer provides a /login path, and can redirect back to the random port on 
+localhost with a valid refresh token, this option should work for your server too.
+The refresh token must be able to be exchanged for a jwt token with correct authorization level.
+
+### Client login profile
+
+A client login should be used if you are using a machine to represent you.
 
 ```
 mim login add 
@@ -61,6 +82,9 @@ against auth0, you need to change it to "client_credentials".
 
 There is (currently) no caching of tokens, so if you use Auth0, be advised that this can incur additional costs.
 
+### Token login profile
+
+We don't recommend you to use this type, but sometimes you just want to test something so it is provided.
 
 ### Listing profiles
 

@@ -17,6 +17,7 @@ package datasets
 import (
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -59,7 +60,7 @@ func init() {
 
 func updateDataset(server string, token string, name string) error {
 
-	_, err := utils.PostRequest(server, token, "/datasets/"+name, nil)
+	_, err := web.PostRequest(server, token, "/datasets/"+name, nil)
 	if err != nil {
 		return err
 	}

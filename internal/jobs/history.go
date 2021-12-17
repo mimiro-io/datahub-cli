@@ -1,3 +1,17 @@
+// Copyright 2021 MIMIRO AS
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package jobs
 
 import (
@@ -7,6 +21,7 @@ import (
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/pretty"
@@ -15,9 +30,9 @@ import (
 
 // StatusCmd represents the staus command on a job
 var HistoryCmd = &cobra.Command{
-	Use:   "history",
-	Short: "history for a job",
-	Long: "history for a job",
+	Use:     "history",
+	Short:   "history for a job",
+	Long:    "history for a job",
 	Example: "mim jobs history --id <jobid>",
 	Run: func(cmd *cobra.Command, args []string) {
 		format := utils.ResolveFormat(cmd)
@@ -42,10 +57,9 @@ var HistoryCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		id := ResolveId(server,token, idOrTitle)
+		id := ResolveId(server, token, idOrTitle)
 
 		pterm.DefaultSection.Printf("Get history of job with id: " + id + " (" + idOrTitle + ") on " + server)
-
 
 		hist := getHistory(id, server, token)
 		utils.HandleError(err)
@@ -69,7 +83,7 @@ func init() {
 func getHistory(id string, server string, token string) api.JobHistory {
 	endpoint := "/jobs/_/history"
 
-	body, err := utils.GetRequest(server, token, endpoint)
+	body, err := web.GetRequest(server, token, endpoint)
 	utils.HandleError(err)
 
 	histories := make([]api.JobHistory, 0)

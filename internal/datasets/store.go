@@ -15,6 +15,7 @@
 package datasets
 
 import (
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"io/ioutil"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -78,7 +79,7 @@ func storeEntities(server string, token string, name string, filename string) er
 	// load data from file as bytes
 	entitiesJSON, err := ioutil.ReadFile(filename)
 
-	_, err = utils.PostRequest(server, token, "/datasets/"+name+"/entities", entitiesJSON)
+	_, err = web.PostRequest(server, token, "/datasets/"+name+"/entities", entitiesJSON)
 	if err != nil {
 		return err
 	}

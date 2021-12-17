@@ -18,10 +18,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"net/url"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
-	"github.com/mimiro-io/datahub-cli/internal/utils"
 )
 
 type QueryResult struct {
@@ -85,7 +85,7 @@ func (qb *QueryBuilder) QuerySingle(entityId string) (*api.Entity, error) {
 		return nil, err
 	}
 
-	res, err := utils.PostRequest(qb.server, qb.token, "/query", content)
+	res, err := web.PostRequest(qb.server, qb.token, "/query", content)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (qb *QueryBuilder) Query(startingEntities []string, predicate string, inver
 		return nil, err
 	}
 
-	res, err := utils.PostRequest(qb.server, qb.token, "/query", content)
+	res, err := web.PostRequest(qb.server, qb.token, "/query", content)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (qb *QueryBuilder) Query(startingEntities []string, predicate string, inver
 }
 
 func (qb *QueryBuilder) GetNamespacePrefix(urlExpansion string) (string, error) {
-	res, err := utils.GetRequest(qb.server, qb.token, fmt.Sprintf("/query/namespace?expansion=%s", url.QueryEscape(urlExpansion)))
+	res, err := web.GetRequest(qb.server, qb.token, fmt.Sprintf("/query/namespace?expansion=%s", url.QueryEscape(urlExpansion)))
 	if err != nil {
 		return "", err
 	}

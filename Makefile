@@ -49,7 +49,7 @@ test:
 	go test ./... -v
 
 license:
-	go get -u github.com/google/addlicense; addlicense -c "MIMIRO AS" $(shell find . -iname "*.go")
+	go install github.com/google/addlicense; addlicense -c "MIMIRO AS" $(shell find . -iname "*.go")
 
 mim:
 	go build -o bin/mim ./cmd/cli/main.go

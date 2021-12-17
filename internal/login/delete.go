@@ -16,13 +16,10 @@ package login
 
 import (
 	"errors"
-	"os"
-	"time"
-
+	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	bolt "go.etcd.io/bbolt"
 )
 
 // addCmd represents the add command
@@ -45,19 +42,7 @@ mim login delete --alias="local"
 			utils.HandleError(errors.New("an alias must be provided"))
 		}
 
-		home, err := os.UserHomeDir()
-		if _, err := os.Stat(home + "/.mim"); os.IsNotExist(err) { // create dir if not exists
-			err = os.Mkdir(home+"/.mim", os.ModePerm)
-			utils.HandleError(err)
-		}
-
-		db, err := bolt.Open(home+"/.mim/conf.db", 0666, &bolt.Options{Timeout: 1 * time.Second})
-		defer db.Close()
-
-		err = db.Update(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("logins"))
-			return b.Delete([]byte(alias))
-		})
+		err = config.Delete(alias)
 		utils.HandleError(err)
 
 		pterm.Success.Println("Deleted login alias")
