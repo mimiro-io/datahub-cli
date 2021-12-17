@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
 	"strings"
 
@@ -103,12 +104,12 @@ func updateJob(server string, token string, job *api.Job) error {
 		return err
 	}
 
-	_, err = utils.PostRequest(server, token, "/jobs", data)
+	_, err = web.PostRequest(server, token, "/jobs", data)
 	return err
 }
 
 func getJob(server string, token string, jobId string) (*api.Job, error) {
-	res, err := utils.GetRequest(server, token, fmt.Sprintf("/jobs/%s", jobId))
+	res, err := web.GetRequest(server, token, fmt.Sprintf("/jobs/%s", jobId))
 	if err != nil {
 		if strings.Index(err.Error(), "404") > -1 {
 			return nil, errors.New(fmt.Sprintf("could not find job '%s' to attach to", jobId))

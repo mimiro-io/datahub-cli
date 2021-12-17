@@ -15,7 +15,7 @@
 package api
 
 import (
-	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 )
 
 type TxnManager struct {
@@ -32,7 +32,6 @@ func NewTxnManager(server string, token string) *TxnManager {
 
 // ExecuteTransaction send txn to the server for execution
 func (txnMgr *TxnManager) ExecuteTransaction(txnData []byte) error {
-	_, err := utils.PostRequest(txnMgr.server, txnMgr.token, "/transactions", txnData)
+	_, err := web.PostRequest(txnMgr.server, txnMgr.token, "/transactions", txnData)
 	return err
 }
-

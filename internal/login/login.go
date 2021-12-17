@@ -15,57 +15,38 @@
 package login
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/config"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/viper"
-	bolt "go.etcd.io/bbolt"
 )
 
 type Response struct {
 	Message string `json:"message"`
 }
 
-type tokenRequest struct {
-	ClientId     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	Audience     string `json:"audience"`
-	GrantType    string `json:"grant_type"`
-}
-
-type tokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	Scope        string `json:"scope,omitempty"`
-	ExpiresIn    int64  `json:"expires_in,omitempty"`
-	TokenType    string `json:"token_type"`
-}
-
+// ResolveCredentials is deprecated, and you should realy use the web.ResolveCredentials() instead.
 func ResolveCredentials() (string, string, error) {
 	alias := viper.GetString("activelogin")
 	if alias != "" {
+
 		payload, err := getLoginAlias(alias)
 		if err != nil {
 			return "", "", err
 		}
-
-		if payload.ClientId == "" {
-			return payload.Server, payload.Token, nil
-		}
-
-		token, err := exchangeToken(payload)
+		tkn, err := web.ResolveCredentials()
 		if err != nil {
 			return "", "", err
 		}
-		return payload.Server, token.AccessToken, nil
+		return payload.Server, tkn.AccessToken, nil
 	} else {
 		server := viper.GetString("server")
 		token := viper.GetString("token")
@@ -74,86 +55,15 @@ func ResolveCredentials() (string, string, error) {
 	}
 }
 
-func exchangeToken(config *payload) (*tokenResponse, error) {
-	request := tokenRequest{
-		ClientId:     config.ClientId,
-		ClientSecret: config.ClientSecret,
-		Audience:     config.Audience,
-		GrantType:    "app_credentials",
-	}
-
-	if request.Audience == "" {
-		request.Audience = config.Server
-	}
-
-	content, err := json.Marshal(request)
-	if err != nil {
+func getLoginAlias(alias string) (*config.Config, error) {
+	data := &config.Config{}
+	if err := config.Load(alias, data); err != nil {
 		return nil, err
 	}
-
-	req, err := http.NewRequest("POST", config.Authorizer, bytes.NewBuffer(content))
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode == http.StatusOK {
-		token := &tokenResponse{}
-		err = json.Unmarshal(bodyBytes, token)
-		if err != nil {
-			return nil, err
-		}
-		return token, nil
-	} else if resp.StatusCode == http.StatusNotFound {
-		return nil, errors.New("the combination of id and secred did not match")
-	} else {
-		message := &Response{}
-		err = json.Unmarshal(bodyBytes, message)
-		utils.HandleError(err)
-		return nil, errors.New("Got http status " + resp.Status + ": " + message.Message)
-	}
+	return data, nil
 }
 
-func getLoginAlias(alias string) (*payload, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	db, err := bolt.Open(home+"/.mim/conf.db", 0666, &bolt.Options{ReadOnly: true})
-	defer db.Close()
-
-	data := &payload{}
-	err = db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("logins"))
-		res := b.Get([]byte(alias))
-		if res == nil {
-			return errors.New("alias not found")
-		}
-		err := json.Unmarshal(res, data)
-		if err != nil {
-			data = nil
-			return err
-		}
-		return nil
-	})
-
-	return data, err
-}
-
-// attemptLogin takes the token and server configuration it is given, and tries to call the /jobs endpoint on the server
+// AttemptLogin takes the token and server configuration it is given, and tries to call the /jobs endpoint on the server
 // If it gets a 200 OK, it assumes login is fine, if not, it returns an error
 func AttemptLogin(server string, token string) error {
 	if server == "" {

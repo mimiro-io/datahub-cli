@@ -16,14 +16,10 @@ package login
 
 import (
 	"encoding/json"
-	"errors"
-	"os"
-	"time"
-
+	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	bolt "go.etcd.io/bbolt"
 )
 
 var CopyCmd = &cobra.Command{
@@ -66,28 +62,11 @@ func init() {
 }
 
 func copy(from string, to string, server string, audience string) error {
-	home, err := os.UserHomeDir()
+	data := &config.Config{}
+	err := config.Load(from, data)
 	if err != nil {
 		return err
 	}
-
-	db, err := bolt.Open(home+"/.mim/conf.db", 0666, &bolt.Options{Timeout: 1 * time.Second})
-	defer db.Close()
-
-	data := &payload{}
-	err = db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("logins"))
-		res := b.Get([]byte(from))
-		if res == nil {
-			return errors.New("alias not found")
-		}
-		err := json.Unmarshal(res, data)
-		if err != nil {
-			data = nil
-			return err
-		}
-		return nil
-	})
 
 	if server != "" {
 		data.Server = server
@@ -97,14 +76,8 @@ func copy(from string, to string, server string, audience string) error {
 	}
 
 	p, err := json.Marshal(data)
-	err = db.Update(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte("logins"))
-		if err != nil {
-			return err
-		}
-		return b.Put([]byte(to), p)
-	})
-
-	return nil
-
+	if err != nil {
+		return err
+	}
+	return config.WriteValue(to, p)
 }

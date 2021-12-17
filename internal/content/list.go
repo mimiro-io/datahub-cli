@@ -17,6 +17,7 @@ package content
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
@@ -58,7 +59,7 @@ mim dataset list
 func getContents(server string, token string) ([]content, error) {
 	contents := make([]content, 0)
 
-	body, err := utils.GetRequest(server, token, "/content")
+	body, err := web.GetRequest(server, token, "/content")
 	if err != nil {
 		return nil, err
 	}

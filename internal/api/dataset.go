@@ -16,6 +16,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"sort"
 	"strings"
 
@@ -42,15 +43,12 @@ func NewDatasetManager(server string, token string) *DatasetManager {
 }
 
 func (dm *DatasetManager) List() ([]Dataset, error) {
-	data, err := utils.GetRequest(dm.server, dm.token, "/datasets")
+	client, err := web.NewClient(dm.server)
 	if err != nil {
 		return nil, err
 	}
-
-	var datasets []Dataset
-
-	err = json.Unmarshal(data, &datasets)
-	if err != nil {
+	datasets := make([]Dataset, 0)
+	if err := client.Get("/datasets", &datasets); err != nil {
 		return nil, err
 	}
 	sort.Slice(datasets, func(i, j int) bool {
@@ -61,7 +59,7 @@ func (dm *DatasetManager) List() ([]Dataset, error) {
 }
 
 func (dm *DatasetManager) Get(name string) (*Entity, error) {
-	res, err := utils.GetRequest(dm.server, dm.token, "/datasets/"+name)
+	res, err := web.GetRequest(dm.server, dm.token, "/datasets/"+name)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +78,7 @@ func GetDatasetsCompletion(pattern string) []string {
 	server, token, err := login.ResolveCredentials()
 	utils.HandleError(err)
 
-	datasets, err := utils.GetRequest(server, token, "/datasets")
+	datasets, err := web.GetRequest(server, token, "/datasets")
 	utils.HandleError(err)
 
 	datasetlist := make([]Dataset, 0)

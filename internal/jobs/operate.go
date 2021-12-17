@@ -17,6 +17,7 @@ package jobs
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
 	"time"
 
@@ -80,7 +81,7 @@ to quickly create a Cobra application.`,
 				if jobType != "" {
 					endpoint = endpoint + "?jobType=" + jobType
 				}
-				response, err := utils.PutRequest(server, token, endpoint)
+				response, err := web.PutRequest(server, token, endpoint)
 				utils.HandleError(err)
 				job, err := getJobResponse(response)
 				utils.HandleError(err)
@@ -97,12 +98,12 @@ to quickly create a Cobra application.`,
 			err = followJob(runningId, server, token)
 			utils.HandleError(err)
 		} else if operation == "pause" {
-			_, err = utils.PutRequest(server, token, fmt.Sprintf("/job/%s/pause", id))
+			_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/pause", id))
 			utils.HandleError(err)
 
 			pterm.Success.Println("Job was paused")
 		} else if operation == "resume" {
-			_, err = utils.PutRequest(server, token, fmt.Sprintf("/job/%s/resume", id))
+			_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/resume", id))
 			utils.HandleError(err)
 
 			pterm.Success.Println("Job was resumed")
@@ -114,7 +115,7 @@ to quickly create a Cobra application.`,
 		} else if operation == "kill" {
 			pterm.DefaultSection.Printf("Do you really want to kill job, type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
-				_, err = utils.PutRequest(server, token, fmt.Sprintf("/job/%s/kill", id))
+				_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/kill", id))
 				utils.HandleError(err)
 
 				pterm.Success.Println("Job was killed")
@@ -186,7 +187,7 @@ func resetJob(server string, token string, jobId string, since string) ([]byte, 
 		endpoint = "?since=" + since
 	}
 
-	return utils.PutRequest(server, token, endpoint)
+	return web.PutRequest(server, token, endpoint)
 }
 
 func init() {

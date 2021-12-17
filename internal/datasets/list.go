@@ -17,6 +17,7 @@ package datasets
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"strings"
@@ -60,7 +61,7 @@ mim dataset list
 		sets, err := dm.List()
 		utils.HandleError(err)
 
-		resp, err := utils.GetRequest(server, token, "/datasets/core.Dataset/entities")
+		resp, err := web.GetRequest(server, token, "/datasets/core.Dataset/entities")
 
 		var coreDataset []api.Entity
 

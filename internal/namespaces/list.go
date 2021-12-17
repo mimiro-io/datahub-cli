@@ -17,6 +17,7 @@ package namespaces
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
@@ -48,7 +49,7 @@ mim jobs -l
 
 		pterm.DefaultSection.Println("Listing server namespaces on " + server)
 
-		namespaces, err := utils.GetRequest(server, token, "/namespaces")
+		namespaces, err := web.GetRequest(server, token, "/namespaces")
 		utils.HandleError(err)
 
 		output(namespaces, format)

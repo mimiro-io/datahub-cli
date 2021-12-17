@@ -17,6 +17,7 @@ package content
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
 	"strings"
 
@@ -87,7 +88,7 @@ func getContentsCompletion(pattern string) []string {
 	server, token, err := login.ResolveCredentials()
 	utils.HandleError(err)
 
-	contents, err := utils.GetRequest(server, token, "/content")
+	contents, err := web.GetRequest(server, token, "/content")
 	utils.HandleError(err)
 
 	contentlist := make([]content, 0)
@@ -105,7 +106,7 @@ func getContentsCompletion(pattern string) []string {
 }
 
 func getContent(server string, token string, id string) (*content, error) {
-	body, err := utils.GetRequest(server, token, fmt.Sprintf("/content/%s", id))
+	body, err := web.GetRequest(server, token, fmt.Sprintf("/content/%s", id))
 	if err != nil {
 		return nil, err
 	}

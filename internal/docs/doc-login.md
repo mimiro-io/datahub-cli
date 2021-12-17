@@ -35,13 +35,40 @@ If you don't provide an alias, the server name is used as an alias, so you shoul
 add an alias.
 
 ```
-mim login add --server="https://my.datahub.server" --token="<valid token>" --alias="server1"
+mim login add --type=client --server="https://my.datahub.server" --token="<valid token>" --alias="server1"
 ```
 
 You cannot change the alias on an existing profile, you need to delete it first.
 
-Since a token has a limited validity, we suggest you use a setup with a clientId and a clientSecret
-instead.
+There are 3 types of logins that are supported: token, client, user.
+
+ * token - you must provide a valid token yourself
+ * client - this is a combination if a client id and secret
+ * user - log in as yourself
+
+### User login profile
+
+To use this option, you must provide a (DataHub) server and a login Authorizer.
+For a user login type, the Authorizer should point to root, a "/login"-path will be automatically added.
+
+Example:
+```
+mim login add --type=user --server="https://my.datahub.server" --authorizer="https://auth.example.io"
+```
+
+When you try to login using this type, a webserver with a random port will be started on your machine.
+Then the cli will attempt to open up your browser with the url to the authorizer login, with a callback 
+url to the previously started web server added. The link will also be clickable in the console, in case it fails
+to open.
+
+Once you have logged in, the auth server must callback to the local server with the callback url provided. 
+The callback url must include a login code and clientId that can be further exchanged for a refresh token.
+
+This is also known as an "oauth authorization code flow".
+
+### Client login profile
+
+A client login should be used if you are using a machine to represent you.
 
 ```
 mim login add 
@@ -61,6 +88,9 @@ against auth0, you need to change it to "client_credentials".
 
 There is (currently) no caching of tokens, so if you use Auth0, be advised that this can incur additional costs.
 
+### Token login profile
+
+You just need a valid token for the operation you are attempting to run.
 
 ### Listing profiles
 
