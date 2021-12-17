@@ -16,6 +16,7 @@ package command
 
 import (
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"os"
 
@@ -42,12 +43,13 @@ Example:
 			pterm.DisableOutput()
 		}
 
-		token := login.UseLogin(args[0])
+		driver := display.ResolveDriver(cmd)
+		login.UpdateConfig(args[0])
+		token, err := login.UseLogin(args[0])
+		driver.RenderError(err, true)
 
 		if out {
-			fmt.Printf("%s\n", token)
-		} else {
-			login.UpdateConfig(args[0])
+			fmt.Printf("%s\n", token.AccessToken)
 		}
 
 	},

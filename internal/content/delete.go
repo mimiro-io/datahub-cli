@@ -16,6 +16,7 @@ package content
 
 import (
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
@@ -62,7 +63,7 @@ mim content delete my-id
 		if confirm {
 			pterm.DefaultSection.Printf("Delete content with content id " + id + " on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
-				err = utils.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
+				err = web.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
 				utils.HandleError(err)
 
 				pterm.Success.Println("Deleted content")
@@ -71,7 +72,7 @@ mim content delete my-id
 				pterm.Println("Aborted!")
 			}
 		} else {
-			err = utils.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
+			err = web.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
 			utils.HandleError(err)
 
 			pterm.Success.Println("Deleted content")

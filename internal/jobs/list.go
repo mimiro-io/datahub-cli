@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"regexp"
 	"sort"
 	"strconv"
@@ -25,14 +26,13 @@ import (
 	"time"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
-	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/pretty"
 )
 
-// listCmd represents the list command
+// ListCmd represents the list command
 var ListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
@@ -51,17 +51,19 @@ to quickly create a Cobra application.`,
 			pterm.DisableOutput()
 		}
 
-		server, token, err := login.ResolveCredentials()
-		utils.HandleError(err)
+		server := web.GetServer()
 
 		pterm.EnableDebugMessages()
 
 		pterm.DefaultSection.Println("Listing server jobs on " + server)
 
-		jobs, err := utils.GetRequest(server, token, "/jobs")
+		client, err := web.NewClient(server)
 		utils.HandleError(err)
 
-		history, err := utils.GetRequest(server, token, "/jobs/_/history")
+		jobs, err := client.GetRaw("/jobs")
+		utils.HandleError(err)
+
+		history, err := client.GetRaw("/jobs/_/history")
 		utils.HandleError(err)
 
 		filter, err := cmd.Flags().GetString("filter")
@@ -441,7 +443,7 @@ func listJobs(jobs []byte, history []byte) ([]api.JobOutput, error) {
 
 func ResolveId(server string, token string, title string) string {
 	id := title
-	allJobs, err := utils.GetRequest(server, token, "/jobs")
+	allJobs, err := web.GetRequest(server, token, "/jobs")
 	utils.HandleError(err)
 
 	joblist := &[]api.Job{}

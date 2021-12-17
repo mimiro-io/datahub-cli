@@ -16,16 +16,14 @@ package login
 
 import (
 	"encoding/json"
-	"os"
-
-	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/internal/config"
+	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	bolt "go.etcd.io/bbolt"
 )
 
-// addCmd represents the add command
+// ListCmd represents the list command
 var ListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
@@ -34,35 +32,34 @@ var ListCmd = &cobra.Command{
 mim login list
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-
+		driver := display.ResolveDriver(cmd)
 		pterm.EnableDebugMessages()
-
-		home, err := os.UserHomeDir()
-		utils.HandleError(err)
-
-		db, err := bolt.Open(home+"/.mim/conf.db", 0666, &bolt.Options{ReadOnly: true})
-		defer db.Close()
-		utils.HandleError(err)
 
 		alias := viper.GetString("activelogin")
 
-		out := make([][]string, 0)
-		out = append(out, []string{"", "Alias", "Server", "Token", "ClientId", "ClientSecret", "Authorizer", "Audience"})
-
-		err = db.View(func(tx *bolt.Tx) error {
-			// Assume bucket exists and has keys
-
-			b := tx.Bucket([]byte("logins"))
-			return b.ForEach(func(k, v []byte) error {
-				data := &payload{}
-				err = json.Unmarshal(v, data)
-				if err != nil {
-					return err
+		var err2 error
+		if items, err := config.Dump(); err != nil {
+			driver.RenderError(err, true)
+		} else {
+			out := make([][]string, 0)
+			out = append(out, []string{"", "Alias", "Server", "Type", "Token", "ClientId", "ClientSecret", "Authorizer", "Audience"})
+			for k, v := range items {
+				data := &config.Config{}
+				err2 = json.Unmarshal(v, data)
+				if err2 != nil {
+					break
+				}
+				loginType := data.Type
+				if data.Type == "" {
+					loginType = "client"
 				}
 
 				token := data.Token
 				if token != "" {
 					token = "*****"
+					if data.Type == "" {
+						loginType = "token"
+					}
 				}
 				secret := data.ClientSecret
 				if secret != "" {
@@ -74,21 +71,17 @@ mim login list
 				}
 
 				active := ""
-				if alias == string(k) {
+				if alias == k {
 					active = " -> "
 				}
 
 				out = append(out, []string{
-					active, string(k), data.Server, token, data.ClientId, secret, data.Authorizer, audience,
+					active, k, data.Server, loginType, token, data.ClientId, secret, data.Authorizer, audience,
 				})
-				return nil
-			})
-
-		})
-		utils.HandleError(err)
-		pterm.DefaultTable.WithHasHeader().WithData(out).Render()
-
-		pterm.Println()
+			}
+			driver.Render(out, true)
+		}
+		driver.RenderError(err2, true)
 	},
 	TraverseChildren: true,
 }

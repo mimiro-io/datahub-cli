@@ -15,7 +15,9 @@
 package login
 
 import (
-	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/internal/config"
+	"github.com/mimiro-io/datahub-cli/internal/display"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -29,45 +31,81 @@ or
 mim login use --alias="dev"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		pterm.EnableDebugMessages()
+		driver := display.ResolveDriver(cmd)
 
 		alias, err := cmd.Flags().GetString("alias")
-		utils.HandleError(err)
+		driver.RenderError(err, true)
 
 		if alias == "" && len(args) > 0 {
 			alias = args[0]
 		}
 
-		UseLogin(alias)
+		driver.Msg("")
+		driver.RenderSuccess("Setting current login to " + alias)
+		_, err = UseLogin(alias)
+		driver.RenderError(err, true)
 		UpdateConfig(alias)
 
 		pterm.Println()
 	},
 }
 
-func UseLogin(alias string) string {
-	pterm.Println()
-	pterm.Success.Println("Setting current login to " + alias)
+func UseLogin(alias string) (*config.SignedToken, error) {
 
-	var token *tokenResponse
 	// can we login?
 	data, err := getLoginAlias(alias)
-	utils.HandleError(err)
-	if data.ClientId == "" {
-		err = AttemptLogin(data.Server, data.Token)
-		utils.HandleError(err)
-	} else {
-		token, err = exchangeToken(data)
-		utils.HandleError(err)
-
-		err = AttemptLogin(data.Server, token.AccessToken)
-		utils.HandleError(err)
+	if err != nil {
+		return nil, err
 	}
 
-	if token != nil {
-		return token.AccessToken
+	// so, we have 3 types of login and some legacy to deal with
+	loginType := data.Type
+	if data.Type == "" {
+		if data.ClientId == "" {
+			loginType = "token"
+		} else {
+			loginType = "client"
+		}
 	}
-	return ""
+
+	var tkn *config.SignedToken
+	var err2 error
+	switch loginType {
+	case "client":
+		token, err := web.ResolveCredentials()
+		tkn = token
+		err2 = err
+	case "user":
+		// if we have a valid refresh token already set, no need to relog, just refresh
+		token, err := web.GetValidToken(data)
+		if err != nil {
+			// not valid or missing
+			lc := NewUserLogin()
+			t, e := lc.Login(data.Authorizer)
+			tkn = t
+			err2 = e
+		} else {
+			tkn = token
+		}
+		if err2 == nil {
+			data.SignedToken = token
+		}
+	default:
+		tkn = &config.SignedToken{AccessToken: data.Token}
+	}
+
+	if err2 != nil {
+		return nil, err
+	}
+
+	data.Type = loginType         // this will upgrade existing ones as they are used
+	_ = config.Store(alias, data) // don't care about error
+
+	err = AttemptLogin(data.Server, tkn.AccessToken)
+	if err != nil {
+		return nil, err
+	}
+	return tkn, nil
 }
 
 func init() {

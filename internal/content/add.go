@@ -17,6 +17,7 @@ package content
 import (
 	"encoding/json"
 	"errors"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
@@ -63,7 +64,7 @@ cat myfile.json | mim content add
 
 		pterm.Success.Println("Read content file")
 
-		_, err = utils.PostRequest(server, token, "/content", conf)
+		_, err = web.PostRequest(server, token, "/content", conf)
 		utils.HandleError(err)
 
 		pterm.Success.Println("Added content to server")

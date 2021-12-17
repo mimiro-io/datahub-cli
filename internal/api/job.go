@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"strings"
 	"time"
 
@@ -71,7 +72,7 @@ func NewJobManager(server string, token string) *JobManager {
 
 // GetJob gets a job given its id, or error if not found.
 func (jm *JobManager) GetJob(jobId string) (*Job, error) {
-	res, err := utils.GetRequest(jm.server, jm.token, fmt.Sprintf("/jobs/%s", jobId))
+	res, err := web.GetRequest(jm.server, jm.token, fmt.Sprintf("/jobs/%s", jobId))
 	if err != nil {
 		if strings.Index(err.Error(), "404") > -1 {
 			return nil, errors.New(fmt.Sprintf("No job for job id - %s found on server %s", jobId, jm.server))
@@ -95,7 +96,7 @@ func (jm *JobManager) UpdateJob(job *Job) (*Job, error) {
 		return nil, err
 	}
 
-	_, err = utils.PostRequest(jm.server, jm.token, "/jobs", data)
+	_, err = web.PostRequest(jm.server, jm.token, "/jobs", data)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +111,7 @@ func (jm *JobManager) AddJob(config []byte) (*Job, error) {
 		return nil, err
 	}
 
-	_, err = utils.PostRequest(jm.server, jm.token, "/jobs", config)
+	_, err = web.PostRequest(jm.server, jm.token, "/jobs", config)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,7 @@ func GetJobsCompletion(pattern string) []string {
 	server, token, err := login.ResolveCredentials()
 	utils.HandleError(err)
 
-	jobs, err := utils.GetRequest(server, token, "/jobs")
+	jobs, err := web.GetRequest(server, token, "/jobs")
 	utils.HandleError(err)
 
 	joblist := make([]Job, 0)
