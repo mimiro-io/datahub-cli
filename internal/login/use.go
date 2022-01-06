@@ -88,7 +88,7 @@ func UseLogin(alias string) (*config.SignedToken, error) {
 			tkn = token
 		}
 		if err2 == nil {
-			data.SignedToken = token
+			data.SignedToken = tkn
 		}
 	default:
 		tkn = &config.SignedToken{AccessToken: data.Token}
