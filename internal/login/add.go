@@ -55,7 +55,7 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 		loginType, err := cmd.Flags().GetString("type")
 		driver.RenderError(err, true)
 		if loginType == "" {
-			driver.RenderError(eris.New("you must set a type"), true)
+			driver.RenderError(eris.New("you must set a login type. ie. --type user|client|token"), true)
 		}
 
 		data := &config.Config{
@@ -107,5 +107,5 @@ func init() {
 	AddCmd.Flags().StringP("clientSecret", "", "", "A client secret to use in an id/secret pair")
 	AddCmd.Flags().StringP("authorizer", "", "", "The authentication server to use with the id/secret")
 	AddCmd.Flags().StringP("audience", "", "", "The audience to use for the token")
-	AddCmd.Flags().String("type", "client", "One of: token, client, user. 'client' is default")
+	AddCmd.Flags().StringP("type", "", "", "One of: token, client or user.")
 }
