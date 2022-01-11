@@ -15,9 +15,14 @@
 package web
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/rotisserie/eris"
 	"github.com/spf13/viper"
+	"io/ioutil"
+	"net/http"
 	"time"
 )
 
@@ -86,8 +91,7 @@ func GetValidToken(cfg *config.Config) (*config.SignedToken, error) {
 	valid := claims.VerifyExpiresAt(now.Unix(), true)
 
 	if !valid {
-		c, err := NewClient(cfg.Authorizer)
-		tkn2, err := c.RefreshToken(claims.Subject, tkn.RefreshToken)
+		tkn2, err := RefreshToken(claims.Subject, tkn.RefreshToken, cfg)
 		if err != nil {
 			return nil, eris.Wrap(err, "failed to refresh token")
 		}
@@ -123,4 +127,70 @@ func getLoginAlias(alias string) (*config.Config, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+func RefreshToken(clientId, refreshToken string, cfg *config.Config) (*config.SignedToken, error) {
+	tkn := &config.SignedToken{}
+	request := tokenRequest{
+		ClientId:     clientId,
+		GrantType:    "refresh_token",
+		RefreshToken: refreshToken,
+	}
+	if err := doMutate(fmt.Sprintf("%s/oauth/token", cfg.Authorizer), "POST", nil, request, tkn); err != nil {
+		return nil, err
+	}
+	return tkn, nil
+}
+
+// Copied from the client to avoid refresh loop issue causing stack overflow. Might want to optimize in the future.
+func doMutate(url string, method string, token *config.SignedToken, request interface{}, response interface{}) error {
+
+	content, err := json.Marshal(request)
+	if err != nil {
+		return ErrFailedToMarshal
+	}
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(content))
+	if err != nil {
+		return eris.Wrap(err, "failed creating http request for some reason")
+	}
+
+	if token != nil {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return eris.Wrap(err, "failed to call endpoint")
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return eris.Wrap(err, "impossible to read the result")
+	}
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
+		if response != nil {
+			err := json.Unmarshal(bodyBytes, response)
+			if err != nil {
+				return eris.Wrap(err, "failed to unmarshal response")
+			}
+		}
+	} else {
+		// so, we might get back a message object, so lets attempt to parse that
+		msg := make(map[string]interface{})
+		err = json.Unmarshal(bodyBytes, &msg)
+		if err != nil {
+			return eris.New("Got http status " + resp.Status)
+		}
+		if m, ok := msg["message"]; ok {
+			return eris.New(fmt.Sprintf("%v: %s", resp.StatusCode, m))
+		}
+		return eris.New("Got http status " + resp.Status)
+	}
+
+	return nil
 }
