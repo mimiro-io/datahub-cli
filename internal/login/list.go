@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/display"
+	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -88,4 +89,16 @@ mim login list
 
 func init() {
 
+}
+
+func GetLoginsCompletion(pattern string) []string {
+	var aliases []string
+	if items, err := config.Dump(); err != nil {
+		utils.HandleError(err)
+	} else {
+		for k := range items {
+			aliases = append(aliases, k)
+		}
+	}
+	return aliases
 }
