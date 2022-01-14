@@ -144,8 +144,8 @@ func GetJobsCompletion(pattern string) []string {
 	var jobIds []string
 
 	for _, job := range joblist {
-		if strings.HasPrefix(strings.ToLower(job.Id), strings.ToLower(pattern)) {
-			jobIds = append(jobIds, job.Id)
+		if strings.HasPrefix(strings.ToLower(job.Title), strings.ToLower(pattern)) {
+			jobIds = append(jobIds, job.Title)
 		}
 	}
 	return jobIds
