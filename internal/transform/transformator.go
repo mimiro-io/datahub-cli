@@ -16,6 +16,7 @@ package transform
 
 import (
 	"fmt"
+	"github.com/gofrs/uuid"
 	"strconv"
 	"strings"
 
@@ -33,6 +34,11 @@ type transformer struct {
 
 func (tf *transformer) Log(thing interface{}) {
 	pterm.Info.Println(fmt.Sprintf("- %v", thing))
+}
+
+func (tf *transformer) UUID() string {
+	uid, _ := uuid.NewV4()
+	return fmt.Sprintf("%s", uid)
 }
 
 func (tf *transformer) MakeEntityArray(entities []interface{}) []*api.Entity {
