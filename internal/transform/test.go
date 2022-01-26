@@ -355,6 +355,7 @@ func hookEngine(server string, token string) *goja.Runtime {
 	engine.Set("IsValidEntity", tf.IsValidEntity)
 	engine.Set("ToString", tf.ToString)
 	engine.Set("AsEntity", tf.AsEntity)
+	engine.Set("UUID", tf.UUID)
 	return engine
 }
 
