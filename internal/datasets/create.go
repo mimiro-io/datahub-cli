@@ -15,6 +15,8 @@
 package datasets
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/internal/web"
@@ -40,11 +42,33 @@ mim dataset create <name>
 		name, err := cmd.Flags().GetString("name")
 		utils.HandleError(err)
 
+		publicNamespaces, err := cmd.Flags().GetStringSlice("publicNamespaces")
+		utils.HandleError(err)
+
+		createDatasetConfig := &CreateDatasetConfig{}
+		createDatasetConfig.PublicNamespaces = publicNamespaces
+
+		proxy, err := cmd.Flags().GetBool("proxy")
+		utils.HandleError(err)
+
+		if proxy {
+			createDatasetConfig.ProxyDatasetConfig = &ProxyDatasetConfig{}
+			proxyRemoteUrl, err := cmd.Flags().GetString("proxyRemoteUrl")
+			utils.HandleError(err)
+			if proxyRemoteUrl == "" {
+				utils.HandleError(errors.New("proxyRemoteUrl required when proxy=true"))
+			}
+			createDatasetConfig.ProxyDatasetConfig.RemoteUrl = proxyRemoteUrl
+			proxyAuthProvider, err := cmd.Flags().GetString("proxyAuthProvider")
+			utils.HandleError(err)
+			createDatasetConfig.ProxyDatasetConfig.AuthProviderName = proxyAuthProvider
+		}
+
 		if len(args) > 0 {
 			name = args[0]
 		}
 
-		err = updateDataset(server, token, name)
+		err = updateDataset(server, token, name, createDatasetConfig)
 		utils.HandleError(err)
 		pterm.Success.Println("Dataset has been created")
 		pterm.Println()
@@ -55,12 +79,38 @@ mim dataset create <name>
 
 func init() {
 	CreateCmd.Flags().StringP("name", "n", "", "The dataset to create")
-
+	CreateCmd.Flags().StringSlice("publicNamespaces", nil, "list of public namespaces for dataset")
+	CreateCmd.Flags().Bool("proxy", false, "flag dataset as proxy dataset")
+	CreateCmd.Flags().String("proxyRemoteUrl", "", "url of proxied remote dataset")
+	CreateCmd.Flags().String("proxyAuthProvider", "", "name of token provider to be used with requests against remote")
 }
 
-func updateDataset(server string, token string, name string) error {
+type ProxyDatasetConfig struct {
+	RemoteUrl           string `json:"remoteUrl"`
+	UpstreamTransform   string `json:"upstreamTransform"`
+	DownstreamTransform string `json:"downstreamTransform"`
+	AuthProviderName    string `json:"authProviderName"`
+}
+type CreateDatasetConfig struct {
+	ProxyDatasetConfig *ProxyDatasetConfig `json:"ProxyDatasetConfig"`
+	PublicNamespaces   []string            `json:"publicNamespaces"`
+}
 
-	_, err := web.PostRequest(server, token, "/datasets/"+name, nil)
+func updateDataset(server string, token string, name string, conf *CreateDatasetConfig) error {
+	var b []byte
+	var err error
+
+	if len(conf.PublicNamespaces) > 0 || conf.ProxyDatasetConfig != nil {
+		b, err = json.Marshal(conf)
+		if err != nil {
+			return err
+		}
+	}
+	path := "/datasets/" + name
+	if conf.ProxyDatasetConfig != nil {
+		path = path + "?proxy=true"
+	}
+	_, err = web.PostRequest(server, token, path, b)
 	if err != nil {
 		return err
 	}

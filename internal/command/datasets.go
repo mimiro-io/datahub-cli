@@ -30,7 +30,7 @@ var DatasetCmd = &cobra.Command{
 	Long: `Manage datahub datasets from cli such as add, delete, describe and so on. See available Commands.
 Examples:
 mim dataset list
-mim dataset add
+mim dataset create
 mim dataset delete
 mim dataset entities --name=<dataset>
 mim dataset changes --name=<dataset>
