@@ -15,6 +15,7 @@
 package login
 
 import (
+	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/mimiro-io/datahub-cli/internal/web"
@@ -71,6 +72,14 @@ func UseLogin(alias string) (*config.SignedToken, error) {
 	var tkn *config.SignedToken
 	var err2 error
 	switch loginType {
+	case "admin":
+		token, err := web.DoAdminLogin(data)
+		tkn = token
+		err2 = err
+	case "cert":
+		token, err := web.GetTokenWithClientCert(data)
+		tkn = token
+		err2 = err
 	case "client":
 		token, err := web.ResolveCredentials()
 		tkn = token
@@ -101,10 +110,11 @@ func UseLogin(alias string) (*config.SignedToken, error) {
 	data.Type = loginType         // this will upgrade existing ones as they are used
 	_ = config.Store(alias, data) // don't care about error
 
-	err = AttemptLogin(data.Server, tkn.AccessToken)
+	fmt.Println("login success.")
+	/* err = AttemptLogin(data.Server, tkn.AccessToken)
 	if err != nil {
 		return nil, err
-	}
+	} */
 	return tkn, nil
 }
 

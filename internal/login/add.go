@@ -55,7 +55,7 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 		loginType, err := cmd.Flags().GetString("type")
 		driver.RenderError(err, true)
 		if loginType == "" {
-			driver.RenderError(eris.New("you must set a login type. ie. --type user|client|token"), true)
+			driver.RenderError(eris.New("you must set a login type. ie. --type user|client|cert"), true)
 		}
 
 		data := &config.Config{
@@ -68,6 +68,16 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 		}
 
 		switch loginType {
+		case "admin":
+			clientId, _ := cmd.Flags().GetString("clientId")
+			clientSecret, _ := cmd.Flags().GetString("clientSecret")
+			data.ClientId = clientId
+			data.ClientSecret = clientSecret
+		case "cert":
+			clientId, _ := cmd.Flags().GetString("clientId")
+			audience, _ := cmd.Flags().GetString("audience")
+			data.ClientId = clientId
+			data.Audience = audience
 		case "client":
 			clientId, _ := cmd.Flags().GetString("clientId")
 			clientSecret, _ := cmd.Flags().GetString("clientSecret")
