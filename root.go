@@ -17,6 +17,7 @@ package datahub_mim_cli
 
 import (
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
@@ -71,6 +72,8 @@ func addCommands() {
 	RootCmd.AddCommand(command.NamespaceCmd)
 	RootCmd.AddCommand(command.CompletionCmd)
 	RootCmd.AddCommand(command.TxnsCmd)
+	RootCmd.AddCommand(command.AclCmd)
+	RootCmd.AddCommand(command.ClientCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -100,4 +103,10 @@ func initConfig() {
 	_ = viper.ReadInConfig()
 
 	viper.AutomaticEnv() // read in environment variables that match
+
+	// ensure client keys are in place
+	err := web.InitialiseClientKeys()
+	if err != nil {
+		fmt.Println(err)
+	}
 }

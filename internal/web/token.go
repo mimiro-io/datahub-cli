@@ -16,13 +16,22 @@ package web
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/mimiro-io/datahub-cli/internal/config"
+	"github.com/pkg/errors"
 	"github.com/rotisserie/eris"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
 	"time"
 )
 
@@ -60,7 +69,23 @@ func ResolveCredentials() (*config.SignedToken, error) {
 		switch loginType {
 		case "client":
 			return exchangeToken(cfg)
+		case "admin":
+			tkn, err := GetValidToken(cfg)
+			if err != nil {
+				return nil, err
+			}
+			cfg.SignedToken = tkn
+			_ = config.Store(alias, cfg)
+			return tkn, nil
 		case "user":
+			tkn, err := GetValidToken(cfg)
+			if err != nil {
+				return nil, err
+			}
+			cfg.SignedToken = tkn
+			_ = config.Store(alias, cfg)
+			return tkn, nil
+		case "cert":
 			tkn, err := GetValidToken(cfg)
 			if err != nil {
 				return nil, err
@@ -77,6 +102,47 @@ func ResolveCredentials() (*config.SignedToken, error) {
 	return &config.SignedToken{AccessToken: token}, nil
 }
 
+func createJWTForTokenRequest(subject string, audience string, privateKey *rsa.PrivateKey) (string, error) {
+	uniqueId := uuid.New()
+
+	claims := jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(time.Minute * 1).Unix(),
+		Id:        uniqueId.String(),
+		Subject:   subject,
+		Audience:  audience,
+	}
+
+	token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(privateKey)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func GetTokenWithClientCert(cfg *config.Config) (*config.SignedToken, error) {
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_assertion_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+
+	pem1, err := createJWTForTokenRequest(cfg.ClientId, cfg.Audience, ClientKeyPair.PrivateKey)
+	data.Set("client_assertion", pem1)
+
+	reqUrl := cfg.Server + "/security/token"
+	res, err := http.PostForm(reqUrl, data)
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(res.Body)
+	response := make(map[string]interface{})
+	err = decoder.Decode(&response)
+	accessToken := response["access_token"].(string)
+	token := &config.SignedToken{}
+	token.AccessToken = accessToken
+	cfg.SignedToken = token
+	return token, nil
+}
+
 func GetValidToken(cfg *config.Config) (*config.SignedToken, error) {
 	tkn := cfg.SignedToken
 	if tkn == nil {
@@ -91,13 +157,45 @@ func GetValidToken(cfg *config.Config) (*config.SignedToken, error) {
 	valid := claims.VerifyExpiresAt(now.Unix(), true)
 
 	if !valid {
-		tkn2, err := RefreshToken(claims.Subject, tkn.RefreshToken, cfg)
-		if err != nil {
-			return nil, eris.Wrap(err, "failed to refresh token")
+		if cfg.Type == "cert" {
+
+		} else if cfg.Type == "admin" {
+			tkn2, err := DoAdminLogin(cfg)
+			if err != nil {
+				return nil, eris.Wrap(err, "failed to refresh token")
+			}
+			return tkn2, nil
+		} else {
+			tkn2, err := RefreshToken(claims.Subject, tkn.RefreshToken, cfg)
+			if err != nil {
+				return nil, eris.Wrap(err, "failed to refresh token")
+			}
+			return tkn2, nil
 		}
-		return tkn2, nil
 	}
 	return tkn, nil
+}
+
+func DoAdminLogin(cfg *config.Config) (*config.SignedToken, error) {
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_id", cfg.ClientId)
+	data.Set("client_secret", cfg.ClientSecret)
+
+	reqUrl := cfg.Server + "/security/token"
+	res, err := http.PostForm(reqUrl, data)
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(res.Body)
+	response := make(map[string]interface{})
+	err = decoder.Decode(&response)
+	accessToken := response["access_token"].(string)
+	token := &config.SignedToken{}
+	token.AccessToken = accessToken
+	cfg.SignedToken = token
+	return token, nil
 }
 
 func exchangeToken(cfg *config.Config) (*config.SignedToken, error) {
@@ -190,6 +288,160 @@ func doMutate(url string, method string, token *config.SignedToken, request inte
 			return eris.New(fmt.Sprintf("%v: %s", resp.StatusCode, m))
 		}
 		return eris.New("Got http status " + resp.Status)
+	}
+
+	return nil
+}
+
+func GenerateRsaKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
+	key, _ := rsa.GenerateKey(rand.Reader, 4096)
+	return key, &key.PublicKey
+}
+
+func ExportRsaPrivateKeyAsPem(key *rsa.PrivateKey) (string, error) {
+	bytes, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		return "", err
+	}
+	pemBytes := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "PRIVATE KEY",
+			Bytes: bytes,
+		},
+	)
+	return string(pemBytes), nil
+}
+
+func ParseRsaPrivateKeyFromPem(pemValue []byte) (*rsa.PrivateKey, error) {
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(pemValue)
+	if err != nil {
+		return nil, err
+	}
+	return privateKey, nil
+}
+
+func ExportRsaPublicKeyAsPem(key *rsa.PublicKey) (string, error) {
+	bytes, err := x509.MarshalPKIXPublicKey(key)
+	if err != nil {
+		return "", err
+	}
+
+	pemBytes := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "PUBLIC KEY",
+			Bytes: bytes,
+		},
+	)
+
+	return string(pemBytes), nil
+}
+
+func ParseRsaPublicKeyFromPem(pemValue []byte) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode(pemValue)
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block containing the key")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	switch pub := pub.(type) {
+	case *rsa.PublicKey:
+		return pub, nil
+	default:
+		break // fall through
+	}
+	return nil, errors.New("Key type is not RSA")
+}
+
+type KeyPair struct {
+	PrivateKey *rsa.PrivateKey
+	PublicKey  *rsa.PublicKey
+	Active     bool
+	Expires    uint64
+}
+
+func NewKeyPair(privateKey *rsa.PrivateKey, publicKey *rsa.PublicKey, active bool) *KeyPair {
+	keyPair := &KeyPair{}
+	keyPair.PrivateKey = privateKey
+	keyPair.PublicKey = publicKey
+	keyPair.Active = active
+	return keyPair
+}
+
+var ClientKeyPair *KeyPair
+
+func InitialiseClientKeys() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return eris.Wrap(err, "home directory is missing")
+	}
+	if _, err := os.Stat(home + "/.mim"); os.IsNotExist(err) { // create dir if not exists
+		err = os.Mkdir(home+"/.mim", os.ModePerm)
+		if err != nil {
+			return eris.Wrap(err, "failed creating the .mim dir")
+		}
+	}
+	err = ensureKeys(home + "/.mim")
+	if err != nil {
+		return eris.Wrap(err, "failed creating client certificate")
+	}
+	return nil
+	// return bolt.Open(home+"/.mim/conf.db", 0666, &bolt.Options{Timeout: 1 * time.Second})
+}
+
+func ensureKeys(location string) error {
+	// try load private and public key
+	fileinfo, err := os.Stat(location + string(os.PathSeparator) + "node_key")
+	if err == nil {
+		// load data for private key
+		content, err := ioutil.ReadFile(location + string(os.PathSeparator) + fileinfo.Name())
+		if err != nil {
+			return err
+		}
+
+		privateKey, err := ParseRsaPrivateKeyFromPem(content)
+		if err != nil {
+			return err
+		}
+
+		// public key
+		content, err = ioutil.ReadFile(location + string(os.PathSeparator) + "node_key.pub")
+		if err != nil {
+			return err
+		}
+
+		publicKey, err := ParseRsaPublicKeyFromPem(content)
+		if err != nil {
+			return err
+		}
+
+		ClientKeyPair = NewKeyPair(privateKey, publicKey, true)
+	} else {
+		// generate files
+		privateKey, publicKey := GenerateRsaKeyPair()
+		privateKeyPem, err := ExportRsaPrivateKeyAsPem(privateKey)
+		if err != nil {
+			return err
+		}
+		publicKeyPem, err := ExportRsaPublicKeyAsPem(publicKey)
+		if err != nil {
+			return err
+		}
+
+		// write keys to files
+		err = ioutil.WriteFile(location+string(os.PathSeparator)+"node_key", []byte(privateKeyPem), 0600)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(location+string(os.PathSeparator)+"node_key.pub", []byte(publicKeyPem), 0600)
+		if err != nil {
+			return err
+		}
+
+		ClientKeyPair = NewKeyPair(privateKey, publicKey, true)
 	}
 
 	return nil

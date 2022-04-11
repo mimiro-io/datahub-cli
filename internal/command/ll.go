@@ -45,6 +45,7 @@ Example:
 
 		driver := display.ResolveDriver(cmd)
 		login.UpdateConfig(args[0])
+		fmt.Println("login starting...")
 		token, err := login.UseLogin(args[0])
 		driver.RenderError(err, true)
 
