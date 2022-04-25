@@ -37,11 +37,12 @@ func NewEntityQuery(server string, token string) *EntityQuery {
 	}
 }
 
-func (eq *EntityQuery) Query(entity []string, via string, inverse bool) ([]interface{}, error) {
+func (eq *EntityQuery) Query(entity []string, via string, inverse bool, datasets []string) ([]interface{}, error) {
 	q := make(map[string]interface{})
 	q["startingEntities"] = entity
 	q["predicate"] = via
 	q["inverse"] = inverse
+	q["datasets"] = datasets
 
 	if via == "" {
 		q["predicate"] = "*"
