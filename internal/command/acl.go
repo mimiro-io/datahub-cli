@@ -15,8 +15,9 @@
 package command
 
 import (
-	"github.com/mimiro-io/datahub-cli/internal/acl"
 	"os"
+
+	"github.com/mimiro-io/datahub-cli/internal/acl"
 
 	"github.com/spf13/cobra"
 )
@@ -41,4 +42,5 @@ Examples:
 
 func init() {
 	AclCmd.AddCommand(acl.AddCmd)
+	AclCmd.AddCommand(acl.GetCmd)
 }

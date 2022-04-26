@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+
 	"github.com/mimiro-io/datahub-cli/internal/web"
 )
 
@@ -15,6 +16,12 @@ func NewSecurityManager(server string, token string) *SecurityManager {
 		server: server,
 		token:  token,
 	}
+}
+
+type AccessControl struct {
+	Resource string
+	Action   string
+	Deny     bool
 }
 
 type ClientInfo struct {
@@ -91,4 +98,17 @@ func (secManager *SecurityManager) AddClientAcl(id string, acls []byte) error {
 	}
 
 	return nil
+}
+
+func (secManager *SecurityManager) GetClientAcl(id string) ([]AccessControl, error) {
+	client, err := web.NewClient(secManager.server)
+	if err != nil {
+		return nil, err
+	}
+
+	clientAcls := make([]AccessControl, 0)
+	if err := client.Get("/security/clients/"+id+"/acl", &clientAcls); err != nil {
+		return nil, err
+	}
+	return clientAcls, nil
 }
