@@ -104,11 +104,12 @@ func (qb *QueryBuilder) QuerySingle(entityId string) (*api.Entity, error) {
 	return &entity[1], nil
 }
 
-func (qb *QueryBuilder) Query(startingEntities []string, predicate string, inverse bool) (*QueryResult, error) {
+func (qb *QueryBuilder) Query(startingEntities []string, predicate string, inverse bool, datasets []string) (*QueryResult, error) {
 	q := make(map[string]interface{})
 	q["startingEntities"] = startingEntities
 	q["predicate"] = predicate
 	q["inverse"] = inverse
+	q["datasets"] = datasets
 
 	if predicate == "" {
 		q["predicate"] = "*"

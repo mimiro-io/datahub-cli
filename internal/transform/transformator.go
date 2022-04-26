@@ -74,8 +74,8 @@ func (tf *transformer) AssertNamespacePrefix(urlExpansion string) string {
 	}
 }
 
-func (tf *transformer) Query(startingEntities []string, predicate string, inverse bool) [][]interface{} {
-	result, err := tf.query.Query(startingEntities, predicate, inverse)
+func (tf *transformer) Query(startingEntities []string, predicate string, inverse bool, datasets []string) [][]interface{} {
+	result, err := tf.query.Query(startingEntities, predicate, inverse, datasets)
 	if err != nil {
 		pterm.Error.Print(err)
 		return nil

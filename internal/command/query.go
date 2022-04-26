@@ -36,6 +36,7 @@ type cmds struct {
 	inverse bool
 	json    bool
 	pretty  bool
+	datasets []string
 }
 
 // describeCmd represents the describe command
@@ -244,7 +245,7 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 func queryEntities(c cmds, server string, token string) ([]interface{}, error) {
 	eq := api.NewEntityQuery(server, token)
 
-	return eq.Query(c.entity, c.via, c.inverse)
+	return eq.Query(c.entity, c.via, c.inverse, c.datasets)
 }
 
 func init() {
