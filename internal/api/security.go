@@ -130,13 +130,13 @@ type ProviderConfig struct {
 	Endpoint     *ValueReader `json:"endpoint,omitempty"`
 }
 
-func (secManager *SecurityManager) AddTokenProvider(config ProviderConfig) error {
+func (secManager *SecurityManager) AddTokenProvider(tokenProviderConfig []byte) error {
 	client, err := web.NewClient(secManager.server)
 	if err != nil {
 		return err
 	}
 
-	err = client.Post("/provider/logins", config, nil)
+	_, err = client.PostRaw("/provider/logins", tokenProviderConfig)
 	if err != nil {
 		return err
 	}
