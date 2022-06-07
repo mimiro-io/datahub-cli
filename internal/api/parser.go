@@ -245,7 +245,7 @@ func (esp *EntityStreamParser) parseProperties(decoder *json.Decoder) (map[strin
 			val, err := esp.parseValue(decoder)
 			if err != nil {
 
-				return nil, errors.New("unable to parse property value of key " + v + "err: " + err.Error())
+				return nil, errors.New("unable to parse property value of key " + v + " err: " + err.Error())
 			}
 
 			if val != nil { // basically if both error is nil, and value is nil, we drop the field
@@ -346,6 +346,8 @@ func (esp *EntityStreamParser) parseArray(decoder *json.Decoder) ([]interface{},
 		case float64:
 			array = append(array, v)
 		case bool:
+			array = append(array, v)
+		case nil:
 			array = append(array, v)
 		default:
 			return nil, errors.New("unknown type")
