@@ -112,3 +112,46 @@ func (secManager *SecurityManager) GetClientAcl(id string) ([]AccessControl, err
 	}
 	return clientAcls, nil
 }
+
+type ValueReader struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
+type ProviderConfig struct {
+	Name         string       `json:"name"`
+	Type         string       `json:"type"`
+	User         *ValueReader `json:"user,omitempty"`
+	Password     *ValueReader `json:"password,omitempty"`
+	ClientId     *ValueReader `json:"key,omitempty"`
+	ClientSecret *ValueReader `json:"secret,omitempty"`
+	Audience     *ValueReader `json:"audience,omitempty"`
+	GrantType    *ValueReader `json:"grantType,omitempty"`
+	Endpoint     *ValueReader `json:"endpoint,omitempty"`
+}
+
+func (secManager *SecurityManager) AddTokenProvider(tokenProviderConfig []byte) error {
+	client, err := web.NewClient(secManager.server)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.PostRaw("/provider/logins", tokenProviderConfig)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (secManager *SecurityManager) ListTokenProviders() ([]ProviderConfig, error) {
+	client, err := web.NewClient(secManager.server)
+	if err != nil {
+		return nil, err
+	}
+	providers := make([]ProviderConfig, 0)
+	if err := client.Get("/provider/logins", &providers); err != nil {
+		return nil, err
+	}
+	return providers, nil
+}

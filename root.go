@@ -74,6 +74,7 @@ func addCommands() {
 	RootCmd.AddCommand(command.TxnsCmd)
 	RootCmd.AddCommand(command.AclCmd)
 	RootCmd.AddCommand(command.ClientCmd)
+	RootCmd.AddCommand(command.ProviderCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
