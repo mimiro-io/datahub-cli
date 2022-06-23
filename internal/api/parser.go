@@ -17,6 +17,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -426,7 +427,7 @@ func (esp *EntityStreamParser) getNamespacedIdentifier(val string, localNamespac
 	if indexOfColon == -1 {
 		localExpansion := localNamespaces["_"]
 		if localExpansion == "" {
-			return "", errors.New("no expansion for default prefix _ ")
+			return "", fmt.Errorf("(property '%v' without prefix) no expansion for default prefix _ ", val)
 		}
 
 		prefix, err := esp.assertPrefixMappingForExpansion(localExpansion)
