@@ -391,6 +391,9 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 		out = append(out, line)
 	}
 
+	// pop header before sorting
+	header, out := out[0], out[1:]
+
 	//sorting the list since it is sorted on ids, but we want it to sort on titles
 	sort.Slice(out[:], func(i, j int) bool {
 		for x := range out[i] {
@@ -401,6 +404,9 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 		}
 		return false
 	})
+
+	// add header to output before returning
+	out = append([][]string{header}, out...)
 
 	return out
 }
