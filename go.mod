@@ -1,6 +1,6 @@
 module github.com/mimiro-io/datahub-cli
 
-go 1.17
+go 1.18
 
 require (
 	github.com/MichaelMure/go-term-markdown v0.1.4
