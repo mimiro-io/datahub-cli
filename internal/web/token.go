@@ -187,6 +187,12 @@ func DoAdminLogin(cfg *config.Config) (*config.SignedToken, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
+	statusOK := res.StatusCode >= 200 && res.StatusCode < 300
+	if !statusOK {
+		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		return nil, fmt.Errorf("%d: %s", res.StatusCode, string(bodyBytes))
+	}
 
 	decoder := json.NewDecoder(res.Body)
 	response := make(map[string]interface{})
