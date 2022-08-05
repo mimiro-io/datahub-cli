@@ -104,7 +104,7 @@ func UseLogin(alias string) (*config.SignedToken, error) {
 	}
 
 	if err2 != nil {
-		return nil, err
+		return nil, err2
 	}
 
 	data.Type = loginType         // this will upgrade existing ones as they are used
