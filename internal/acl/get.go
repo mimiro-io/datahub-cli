@@ -65,6 +65,12 @@ mim acl get <name>
 		fmt.Println(string(out))
 	},
 	TraverseChildren: true,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return api.GetClientsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 
 func init() {
