@@ -40,6 +40,12 @@ mim transform import <my-job> -f <transform.js>
 
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(0)
+		}
+
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)
 
@@ -78,7 +84,9 @@ mim transform import <my-job> -f <transform.js>
 
 		jobManager := api.NewJobManager(server, token)
 
-		job, err := jobManager.GetJob(jobId)
+		resolvedJobId := jobManager.ResolveId(jobId)
+
+		job, err := jobManager.GetJob(resolvedJobId)
 		utils.HandleError(err)
 		pterm.Success.Println("Fetched job with id " + jobId)
 
@@ -96,6 +104,12 @@ mim transform import <my-job> -f <transform.js>
 		pterm.Println()
 	},
 	TraverseChildren: true,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return api.GetJobsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 
 func updateJob(server string, token string, job *api.Job) error {

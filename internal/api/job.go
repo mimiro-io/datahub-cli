@@ -150,3 +150,22 @@ func GetJobsCompletion(pattern string) []string {
 	}
 	return jobIds
 }
+
+func (jm *JobManager) ResolveId(title string) string {
+	server, token, err := login.ResolveCredentials()
+	utils.HandleError(err)
+
+	allJobs, err := web.GetRequest(server, token, "/jobs")
+	utils.HandleError(err)
+
+	joblist := make([]Job, 0)
+	err = json.Unmarshal(allJobs, &joblist)
+	utils.HandleError(err)
+
+	for _, job := range joblist {
+		if job.Title == title {
+			return job.Id
+		}
+	}
+	return title
+}
