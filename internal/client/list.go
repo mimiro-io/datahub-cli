@@ -32,7 +32,10 @@ var ListCmd = &cobra.Command{
 mim client list
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		pterm.DisableOutput()
+		format := utils.ResolveFormat(cmd)
+		if format == "json" {
+			pterm.DisableOutput()
+		}
 
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)
