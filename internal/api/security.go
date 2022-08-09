@@ -2,6 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/mimiro-io/datahub-cli/internal/login"
+	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"strings"
 
 	"github.com/mimiro-io/datahub-cli/internal/web"
 )
@@ -154,4 +157,22 @@ func (secManager *SecurityManager) ListTokenProviders() ([]ProviderConfig, error
 		return nil, err
 	}
 	return providers, nil
+}
+
+func GetClientsCompletion(pattern string) []string {
+	server, token, err := login.ResolveCredentials()
+	utils.HandleError(err)
+
+	sm := NewSecurityManager(server, token)
+	clients, err := sm.ListClients()
+	utils.HandleError(err)
+
+	var clientIds []string
+
+	for client, _ := range clients {
+		if strings.HasPrefix(strings.ToLower(client), strings.ToLower(pattern)) {
+			clientIds = append(clientIds, client)
+		}
+	}
+	return clientIds
 }

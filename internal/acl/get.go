@@ -17,6 +17,7 @@ package acl
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
@@ -34,16 +35,29 @@ var GetCmd = &cobra.Command{
 mim acl get <name>
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		pterm.DisableOutput()
+		format := utils.ResolveFormat(cmd)
+		if format == "json" {
+			pterm.DisableOutput()
+		}
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)
 
-		name := args[0]
+		clientId, err := cmd.Flags().GetString("clientId")
+		utils.HandleError(err)
+		if len(args) > 0 && clientId == "" {
+			clientId = args[0]
+		}
+
+		if clientId == "" {
+			pterm.Warning.Println("You must provide a clientId")
+			pterm.Println()
+			os.Exit(1)
+		}
 
 		pterm.EnableDebugMessages()
 
 		sm := api.NewSecurityManager(server, token)
-		clients, err := sm.GetClientAcl(name)
+		clients, err := sm.GetClientAcl(clientId)
 		utils.HandleError(err)
 
 		out, err := json.Marshal(clients)
@@ -51,7 +65,14 @@ mim acl get <name>
 		fmt.Println(string(out))
 	},
 	TraverseChildren: true,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return api.GetClientsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 
 func init() {
+	GetCmd.Flags().StringP("clientId", "c", "", "The clientId of the client you want to get details about")
 }
