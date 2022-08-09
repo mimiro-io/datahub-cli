@@ -196,7 +196,7 @@ func init() {
 	OperateCmd.Flags().StringP("since", "s", "", "The since token to reset to, if resetting or running")
 	OperateCmd.Flags().StringP("jobType", "t", "", "jobType for operation run: fullsync or incremental")
 	OperateCmd.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"run", "stop", "pause", "resume", "kill"}, cobra.ShellCompDirectiveDefault
+		return []string{"run", "stop", "pause", "resume", "kill", "reset"}, cobra.ShellCompDirectiveDefault
 	})
 	OperateCmd.RegisterFlagCompletionFunc("jobType", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"fullsync", "incremental"}, cobra.ShellCompDirectiveDefault
