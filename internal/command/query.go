@@ -256,7 +256,7 @@ func init() {
 	QueryCmd.Flags().String("via", "", "The URI of the traversal reference type")
 	QueryCmd.Flags().Bool("inverse", false, "Indicates if the traversal is out from the entities or incoming")
 	QueryCmd.Flags().Bool("output-entities", true, "If this is an entity query, and the output is json, then this outputs only the list of entities")
-	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "")
+	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "add a list of datasets to filter in with '<dataset-name>, <dataset-name>'")
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
