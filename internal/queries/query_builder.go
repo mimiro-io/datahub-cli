@@ -76,9 +76,10 @@ func NewQueryBuilder(server string, token string) *QueryBuilder {
 	}
 }
 
-func (qb *QueryBuilder) QuerySingle(entityId string) (*api.Entity, error) {
+func (qb *QueryBuilder) QuerySingle(entityId string, datasets []string) (*api.Entity, error) {
 	q := make(map[string]interface{})
 	q["entityId"] = entityId
+	q["datasets"] = datasets
 
 	content, err := json.Marshal(&q)
 	if err != nil {

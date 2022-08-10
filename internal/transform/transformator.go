@@ -94,7 +94,7 @@ func (tf *transformer) Query(startingEntities []string, predicate string, invers
 }
 
 func (tf *transformer) ById(entityId string) *api.Entity {
-	entity, err := tf.query.QuerySingle(entityId)
+	entity, err := tf.query.QuerySingle(entityId, []string{})
 	if err != nil {
 		return nil
 	}
