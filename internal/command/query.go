@@ -221,6 +221,7 @@ func resolveCmds(cmd *cobra.Command, args []string) cmds {
 	c.inverse, _ = cmd.Flags().GetBool("inverse")
 	c.json, _ = cmd.Flags().GetBool("json")
 	c.pretty, _ = cmd.Flags().GetBool("pretty")
+	c.datasets, _ = cmd.Flags().GetStringArray("datasets")
 	return c
 }
 
@@ -229,7 +230,7 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 
 	qb := queries.NewQueryBuilder(server, token)
 
-	res, err := qb.QuerySingle(c.id)
+	res, err := qb.QuerySingle(c.id, c.datasets)
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +256,7 @@ func init() {
 	QueryCmd.Flags().String("via", "", "The URI of the traversal reference type")
 	QueryCmd.Flags().Bool("inverse", false, "Indicates if the traversal is out from the entities or incoming")
 	QueryCmd.Flags().Bool("output-entities", true, "If this is an entity query, and the output is json, then this outputs only the list of entities")
+	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "")
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
