@@ -17,7 +17,6 @@ package jobs
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"time"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -89,26 +88,6 @@ mim jobs status
 
 func init() {
 	StatusCmd.Flags().StringP("id", "i", "", "The name of the job you want to get status on")
-}
-
-func getStatus(id string, server string, token string) ([]jobStatus, error) {
-	endpoint := "/jobs/_/status"
-	if id != "" {
-		endpoint = fmt.Sprintf("/job/%s/status", id)
-	}
-
-	body, err := web.GetRequest(server, token, endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	jobs := make([]jobStatus, 0)
-	err = json.Unmarshal(body, &jobs)
-	if err != nil {
-		return nil, err
-	}
-
-	return jobs, nil
 }
 
 func renderBody(jobs []api.JobStatus, format string) {
