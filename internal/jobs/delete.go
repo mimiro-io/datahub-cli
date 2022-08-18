@@ -15,8 +15,6 @@
 package jobs
 
 import (
-	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -60,13 +58,15 @@ to quickly create a Cobra application.`,
 
 		pterm.EnableDebugMessages()
 
-		id := ResolveId(server, token, idOrTitle)
+		jm := api.NewJobManager(server, token)
+
+		id := jm.ResolveId(idOrTitle)
 		pterm.DefaultSection.Println("Deleting job with id: " + id + " (" + idOrTitle + ") ")
 
 		if confirm {
 			pterm.Warning.Printf("Delete job with job id: " + id + " (" + idOrTitle + ") on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
-				err = web.DeleteRequest(server, token, fmt.Sprintf("/jobs/%s", id))
+				err = jm.DeleteJob(id)
 				utils.HandleError(err)
 
 				pterm.Success.Println("Deleted job")
@@ -75,7 +75,7 @@ to quickly create a Cobra application.`,
 				pterm.Println("Aborted!")
 			}
 		} else {
-			err = web.DeleteRequest(server, token, fmt.Sprintf("/jobs/%s", id))
+			err = jm.DeleteJob(id)
 			utils.HandleError(err)
 
 			pterm.Success.Println("Deleted job")

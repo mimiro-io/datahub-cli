@@ -64,7 +64,8 @@ to quickly create a Cobra application.`,
 		since, err := cmd.Flags().GetString("since")
 		utils.HandleError(err)
 
-		id := ResolveId(server, token, idOrTitle)
+		jm := api.NewJobManager(server, token)
+		id := jm.ResolveId(idOrTitle)
 
 		pterm.DefaultSection.Printf("Execute operation " + operation + " on job with id: " + id + " (" + idOrTitle + ") on " + server)
 		pterm.Println()
