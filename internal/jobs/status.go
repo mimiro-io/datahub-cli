@@ -17,7 +17,6 @@ package jobs
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"time"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -63,14 +62,16 @@ mim jobs status
 
 		var id string
 
+		jm := api.NewJobManager(server, token)
+
 		if idOrTitle != "" {
-			id = ResolveId(server, token, idOrTitle)
+			id = jm.ResolveId(idOrTitle)
 			pterm.DefaultSection.Printf("Get status on job with job id: " + id + " (" + idOrTitle + ") on " + server)
 		} else {
 			pterm.DefaultSection.Printf("Get status on all running jobs on " + server)
 			id = ""
 		}
-		jobs, err := getStatus(id, server, token)
+		jobs, err := jm.GetJobStatus(id)
 		utils.HandleError(err)
 
 		renderBody(jobs, format)
@@ -89,27 +90,7 @@ func init() {
 	StatusCmd.Flags().StringP("id", "i", "", "The name of the job you want to get status on")
 }
 
-func getStatus(id string, server string, token string) ([]jobStatus, error) {
-	endpoint := "/jobs/_/status"
-	if id != "" {
-		endpoint = fmt.Sprintf("/job/%s/status", id)
-	}
-
-	body, err := web.GetRequest(server, token, endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	jobs := make([]jobStatus, 0)
-	err = json.Unmarshal(body, &jobs)
-	if err != nil {
-		return nil, err
-	}
-
-	return jobs, nil
-}
-
-func renderBody(jobs []jobStatus, format string) {
+func renderBody(jobs []api.JobStatus, format string) {
 
 	jd, err := json.Marshal(jobs)
 	utils.HandleError(err)

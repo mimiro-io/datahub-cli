@@ -447,28 +447,6 @@ func listJobs(jobs []byte, history []byte) ([]api.JobOutput, error) {
 	return output, nil
 }
 
-func ResolveId(server string, token string, title string) string {
-	id := title
-	allJobs, err := web.GetRequest(server, token, "/jobs")
-	utils.HandleError(err)
-
-	joblist := &[]api.Job{}
-	err = json.Unmarshal(allJobs, joblist)
-	if err != nil {
-		return title
-	}
-
-	for _, job := range *joblist {
-		out := api.JobOutput{
-			Job: job,
-		}
-		if out.Job.Title == title {
-			id = out.Job.Id
-		}
-	}
-	return id
-}
-
 func init() {
 	ListCmd.PersistentFlags().Bool("verbose", false, "Verbose output of jobs list")
 	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar' or 'title=foo,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")

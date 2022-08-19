@@ -53,6 +53,12 @@ type JobHistory struct {
 	LastError string    `json:"lastError"`
 }
 
+type JobStatus struct {
+	JobId    string    `json:"jobId"`
+	JobTitle string    `json:"jobTitle"`
+	Started  time.Time `json:"started"`
+}
+
 type JobOutput struct {
 	Job     Job
 	History *JobHistory
@@ -130,6 +136,52 @@ func (jm *JobManager) AddTransform(job *Job, transform string) (*Job, error) {
 	return jm.UpdateJob(job)
 }
 
+// DeleteJob deletes a job
+func (jm *JobManager) DeleteJob(jobId string) error {
+	err := web.DeleteRequest(jm.server, jm.token, fmt.Sprintf("/jobs/%s", jobId))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetJobStatus get the status for a given id or all running jobs
+func (jm *JobManager) GetJobStatus(jobId string) ([]JobStatus, error) {
+	endpoint := "/jobs/_/status"
+	if jobId != "" {
+		endpoint = fmt.Sprintf("/job/%s/status", jobId)
+	}
+
+	data, err := web.GetRequest(jm.server, jm.token, endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := make([]JobStatus, 0)
+	err = json.Unmarshal(data, &jobs)
+	if err != nil {
+		return nil, err
+	}
+	return jobs, nil
+}
+
+func (jm *JobManager) GetJobHistory(id string) (JobHistory, error) {
+
+	body, err := web.GetRequest(jm.server, jm.token, "/jobs/_/history")
+	utils.HandleError(err)
+
+	histories := make([]JobHistory, 0)
+	err = json.Unmarshal(body, &histories)
+	utils.HandleError(err)
+
+	for _, hist := range histories {
+		if hist.Id == id {
+			return hist, nil
+		}
+	}
+	return JobHistory{}, errors.New(fmt.Sprintf("No history found for job %s", id))
+}
+
 func GetJobsCompletion(pattern string) []string {
 	server, token, err := login.ResolveCredentials()
 	utils.HandleError(err)
@@ -152,10 +204,7 @@ func GetJobsCompletion(pattern string) []string {
 }
 
 func (jm *JobManager) ResolveId(title string) string {
-	server, token, err := login.ResolveCredentials()
-	utils.HandleError(err)
-
-	allJobs, err := web.GetRequest(server, token, "/jobs")
+	allJobs, err := web.GetRequest(jm.server, jm.token, "/jobs")
 	utils.HandleError(err)
 
 	joblist := make([]Job, 0)

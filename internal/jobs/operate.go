@@ -64,13 +64,14 @@ to quickly create a Cobra application.`,
 		since, err := cmd.Flags().GetString("since")
 		utils.HandleError(err)
 
-		id := ResolveId(server, token, idOrTitle)
+		jm := api.NewJobManager(server, token)
+		id := jm.ResolveId(idOrTitle)
 
 		pterm.DefaultSection.Printf("Execute operation " + operation + " on job with id: " + id + " (" + idOrTitle + ") on " + server)
 		pterm.Println()
 		if operation == "run" {
 			// is job running?
-			running, err := getStatus(id, server, token)
+			running, err := jm.GetJobStatus(id)
 			utils.HandleError(err)
 			runningId := ""
 			if len(running) == 0 { // not running
@@ -95,7 +96,7 @@ to quickly create a Cobra application.`,
 			}
 
 			// follow the job
-			err = followJob(runningId, server, token)
+			err = followJob(runningId, *jm)
 			utils.HandleError(err)
 		} else if operation == "pause" {
 			_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/pause", id))
@@ -153,14 +154,14 @@ func getJobResponse(response []byte) (*jobResponse, error) {
 	return job, nil
 }
 
-func followJob(jobId, server string, token string) error {
+func followJob(jobId string, jm api.JobManager) error {
 	pterm.Println()
 	spinner, err := pterm.DefaultSpinner.Start(fmt.Sprintf("Processing job with id '%s'", jobId))
 	utils.HandleError(err)
 	success := true
 	msg := "Finished"
 	for {
-		status, err := getStatus(jobId, server, token)
+		status, err := jm.GetJobStatus(jobId)
 		if err != nil {
 			success = false
 			msg = err.Error()

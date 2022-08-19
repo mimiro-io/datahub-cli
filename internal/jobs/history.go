@@ -21,7 +21,6 @@ import (
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/pretty"
@@ -56,12 +55,12 @@ var HistoryCmd = &cobra.Command{
 			pterm.Println()
 			os.Exit(1)
 		}
-
-		id := ResolveId(server, token, idOrTitle)
+		jm := api.NewJobManager(server, token)
+		id := jm.ResolveId(idOrTitle)
 
 		pterm.DefaultSection.Printf("Get history of job with id: " + id + " (" + idOrTitle + ") on " + server)
 
-		hist := getHistory(id, server, token)
+		hist, err := jm.GetJobHistory(id)
 		utils.HandleError(err)
 
 		renderHistory(hist, format)
@@ -78,24 +77,6 @@ var HistoryCmd = &cobra.Command{
 
 func init() {
 	HistoryCmd.Flags().StringP("id", "i", "", "The name of the job you want to get status on")
-}
-
-func getHistory(id string, server string, token string) api.JobHistory {
-	endpoint := "/jobs/_/history"
-
-	body, err := web.GetRequest(server, token, endpoint)
-	utils.HandleError(err)
-
-	histories := make([]api.JobHistory, 0)
-	err = json.Unmarshal(body, &histories)
-	utils.HandleError(err)
-
-	for _, hist := range histories {
-		if hist.Id == id {
-			return hist
-		}
-	}
-	return api.JobHistory{}
 }
 
 func renderHistory(history api.JobHistory, format string) {

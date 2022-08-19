@@ -22,6 +22,8 @@ import (
 	"github.com/mimiro-io/datahub-cli/internal/web"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"os"
+	"strings"
 )
 
 // deleteCmd represents the delete command
@@ -39,7 +41,7 @@ mim dataset create <name>
 
 		pterm.EnableDebugMessages()
 
-		name, err := cmd.Flags().GetString("name")
+		name, err := cmd.Flags().GetStringSlice("name")
 		utils.HandleError(err)
 
 		publicNamespaces, err := cmd.Flags().GetStringSlice("publicNamespaces")
@@ -65,20 +67,29 @@ mim dataset create <name>
 		}
 
 		if len(args) > 0 {
-			name = args[0]
+			name = strings.Split(args[0], ",")
 		}
-
-		err = updateDataset(server, token, name, createDatasetConfig)
-		utils.HandleError(err)
-		pterm.Success.Println("Dataset has been created")
-		pterm.Println()
+		if len(name) == 0 {
+			pterm.Warning.Println("You must provide a dataset name")
+			pterm.Println()
+			os.Exit(1)
+		}
+		for _, i := range name {
+			err = updateDataset(server, token, i, createDatasetConfig)
+			if err != nil {
+				pterm.Error.Println(err.Error())
+				continue
+			}
+			pterm.Success.Printf("Dataset '%s' has been created", i)
+			pterm.Println()
+		}
 
 	},
 	TraverseChildren: true,
 }
 
 func init() {
-	CreateCmd.Flags().StringP("name", "n", "", "The dataset to create")
+	CreateCmd.Flags().StringSlice("name", nil, "The dataset to create. ")
 	CreateCmd.Flags().StringSlice("publicNamespaces", nil, "list of public namespaces for dataset")
 	CreateCmd.Flags().Bool("proxy", false, "flag dataset as proxy dataset")
 	CreateCmd.Flags().String("proxyRemoteUrl", "", "url of proxied remote dataset")

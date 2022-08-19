@@ -61,13 +61,12 @@ to quickly create a Cobra application.`,
 			pterm.Println()
 			os.Exit(1)
 		}
-		id := ResolveId(server,token, idOrTitle)
+		jm := api.NewJobManager(server, token)
+		id := jm.ResolveId(idOrTitle)
 
 		pterm.DefaultSection.Printf("Get description of job with id: " + id + " (" + idOrTitle + ") on " + server)
 
-		jobManager := api.NewJobManager(server, token)
-
-		job, err := jobManager.GetJob(id)
+		job, err := jm.GetJob(id)
 		utils.HandleError(err)
 
 		renderJob(job, format)
