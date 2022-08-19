@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/web"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -391,22 +390,7 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 		out = append(out, line)
 	}
 
-	// pop header before sorting
-	header, out := out[0], out[1:]
-
-	//sorting the list since it is sorted on ids, but we want it to sort on titles
-	sort.Slice(out[:], func(i, j int) bool {
-		for x := range out[i] {
-			if out[i][x] == out[j][x] {
-				continue
-			}
-			return out[i][x] < out[j][x]
-		}
-		return false
-	})
-
-	// add header to output before returning
-	out = append([][]string{header}, out...)
+	out = utils.SortOutputList(out)
 
 	return out
 }
