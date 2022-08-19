@@ -112,6 +112,9 @@ func renderBody(jobs []api.JobStatus, format string) {
 				fmt.Sprintf("%s", row.Started),
 			})
 		}
+
+		out = utils.SortOutputList(out)
+
 		pterm.DefaultTable.WithHasHeader().WithData(out).Render()
 		pterm.Println()
 	}

@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
 	"unicode"
@@ -172,4 +173,23 @@ func ReadInput(file string) ([]byte, error) {
 			return output, nil
 		}
 	}
+}
+
+func SortOutputList(output [][] string) ([][] string){
+	header, out := output[0], output[1:]
+
+	//sorting the list since it is sorted on ids, but we want it to sort on titles
+	sort.Slice(out[:], func(i, j int) bool {
+		for x := range out[i] {
+			if out[i][x] == out[j][x] {
+				continue
+			}
+			return out[i][x] < out[j][x]
+		}
+		return false
+	})
+
+	// add header to output before returning
+	out = append([][]string{header}, out...)
+	return out
 }
