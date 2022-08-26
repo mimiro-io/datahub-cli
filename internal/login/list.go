@@ -79,9 +79,8 @@ mim login list
 				out = append(out, []string{
 					active, k, data.Server, loginType, token, data.ClientId, secret, data.Authorizer, audience,
 				})
-				out = utils.SortOutputList(out)
+				out = utils.SortOutputList(out, "Alias")
 			}
-			out = utils.SortOutputList(out, "Alias")
 			driver.Render(out, true)
 		}
 		driver.RenderError(err2, true)
