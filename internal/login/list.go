@@ -79,6 +79,7 @@ mim login list
 				out = append(out, []string{
 					active, k, data.Server, loginType, token, data.ClientId, secret, data.Authorizer, audience,
 				})
+				out = utils.SortOutputList(out)
 			}
 			driver.Render(out, true)
 		}
