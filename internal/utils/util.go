@@ -175,16 +175,22 @@ func ReadInput(file string) ([]byte, error) {
 	}
 }
 
-func SortOutputList(output [][] string) ([][] string){
+func SortOutputList(output [][] string, sortBy string) ([][] string){
 	header, out := output[0], output[1:]
+	headerPosition := 0
+	for hPosition := range header{
+		if header[hPosition] == sortBy{
+			headerPosition = hPosition
+		}
+	}
 
 	//sorting the list since it is sorted on ids, but we want it to sort on titles
 	sort.Slice(out[:], func(i, j int) bool {
-		for x := range out[i] {
-			if out[i][x] == out[j][x] {
+		for _ = range out[i] {
+			if out[i][headerPosition] == out[j][headerPosition] {
 				continue
 			}
-			return out[i][x] < out[j][x]
+			return out[i][headerPosition] < out[j][headerPosition]
 		}
 		return false
 	})

@@ -81,6 +81,7 @@ mim login list
 				})
 				out = utils.SortOutputList(out)
 			}
+			out = utils.SortOutputList(out, "Alias")
 			driver.Render(out, true)
 		}
 		driver.RenderError(err2, true)

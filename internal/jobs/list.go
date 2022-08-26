@@ -390,7 +390,7 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 		out = append(out, line)
 	}
 
-	out = utils.SortOutputList(out)
+	out = utils.SortOutputList(out, "Title")
 
 	return out
 }

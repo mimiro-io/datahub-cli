@@ -113,7 +113,7 @@ func renderBody(jobs []api.JobStatus, format string) {
 			})
 		}
 
-		out = utils.SortOutputList(out)
+		out = utils.SortOutputList(out, "Title")
 
 		pterm.DefaultTable.WithHasHeader().WithData(out).Render()
 		pterm.Println()
