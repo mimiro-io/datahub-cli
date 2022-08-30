@@ -76,6 +76,9 @@ mim dataset create <name>
 		}
 		for _, i := range name {
 			err = updateDataset(server, token, i, createDatasetConfig)
+			if len(name) == 1 {
+				utils.HandleError(err)
+			}
 			if err != nil {
 				pterm.Error.Println(err.Error())
 				continue
