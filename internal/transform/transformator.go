@@ -38,7 +38,7 @@ func (tf *transformer) Log(thing interface{}, logLevel string ) {
 		pterm.Info.Println(fmt.Sprintf("- %v", thing))
 	case "warn", "warning":
 		pterm.Warning.Println(fmt.Sprintf("- %v", thing))
-	case "error":
+	case "err", "error":
 		pterm.Error.Println(fmt.Sprintf("- %v", thing))
 	default:
 		pterm.Info.Println(fmt.Sprintf("- %v", thing))
