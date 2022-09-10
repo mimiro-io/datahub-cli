@@ -23,8 +23,8 @@ import (
 	"net/http"
 )
 
-func PostRequest(server string, token string, path string, content []byte) ([]byte, error) {
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s%s", server, path), bytes.NewBuffer(content))
+func sendRequest(method string, server string, token string, path string, content []byte) ([]byte, error) {
+	req, err := http.NewRequest(method, fmt.Sprintf("%s%s", server, path), bytes.NewBuffer(content))
 
 	if err != nil {
 		return nil, err
@@ -163,4 +163,13 @@ func PutRequest(server string, token string, path string) ([]byte, error) {
 		}
 		return nil, errors.New(fmt.Sprintf("Http %s - %s", resp.Status, msg["message"]))
 	}
+}
+
+func PostRequest(server string, token string, path string, content []byte) ([]byte, error) {
+	return sendRequest("POST", server, token, path, content)
+}
+
+func PatchRequest(server string, token string, path string, content []byte) ([]byte, error) {
+	return sendRequest("PATCH", server, token, path, content)
+
 }

@@ -16,6 +16,7 @@ Usage:
   mim dataset get [flags]
   mim dataset entities [flags]
   mim dataset changes [flags]
+  mim dataset rename [flags]
   mim dataset store [flags]
 
 Flags:

@@ -74,6 +74,19 @@ func (dm *DatasetManager) Get(name string) (*Entity, error) {
 	return e, nil
 }
 
+func (dm *DatasetManager) Rename(name string, newName string) error {
+	payload, err := json.Marshal(map[string]string{"ID": newName})
+	if err != nil {
+		return err
+	}
+
+	_, err = web.PatchRequest(dm.server, dm.token, "/datasets/"+name, payload)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetDatasetsCompletion(pattern string) []string {
 	server, token, err := login.ResolveCredentials()
 	utils.HandleError(err)
