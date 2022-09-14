@@ -53,6 +53,7 @@ func init() {
 	DatasetCmd.AddCommand(datasets.CreateCmd)
 	DatasetCmd.AddCommand(datasets.GetCmd)
 	DatasetCmd.AddCommand(datasets.StoreCmd)
+	DatasetCmd.AddCommand(datasets.RenameCmd)
 
 	DatasetCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
