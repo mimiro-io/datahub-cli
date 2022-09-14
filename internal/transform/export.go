@@ -49,16 +49,17 @@ mim transform export <my-job> > out.js
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)
 
-		jobId, _ := cmd.Flags().GetString("id")
-		if jobId == "" && len(args) > 0 {
-			jobId = args[0]
+		idOrTitle, _ := cmd.Flags().GetString("id")
+		if idOrTitle == "" && len(args) > 0 {
+			idOrTitle = args[0]
 		}
 
-		if jobId == "" {
+		if idOrTitle == "" {
 			utils.HandleError(errors.New("job id is missing"))
 		}
 
 		jobManager := api.NewJobManager(server, token)
+		jobId := jobManager.ResolveId(idOrTitle)
 		job, err := jobManager.GetJob(jobId)
 		utils.HandleError(err)
 
