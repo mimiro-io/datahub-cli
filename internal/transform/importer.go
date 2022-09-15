@@ -21,6 +21,7 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/evanw/esbuild/pkg/cli"
 	"github.com/pterm/pterm"
+	"os/exec"
 	"strings"
 )
 
@@ -34,7 +35,7 @@ func NewImporter(file string) *Importer {
 	}
 }
 
-func (imp *Importer) Import() ([]byte, error) {
+func (imp *Importer) ImportJs() ([]byte, error) {
 	result, err := imp.buildCode()
 	if err != nil {
 		return nil, err
@@ -46,6 +47,19 @@ func (imp *Importer) Import() ([]byte, error) {
 	pterm.Println(code)
 
 	return []byte(code), nil
+}
+
+func (imp *Importer) ImportTs()([]byte, error)  {
+	typescriptCmd := []string{"npx", "tt", imp.file}
+	code, err := imp.Cmd(typescriptCmd)
+
+	pterm.Println(string(code))
+	return code, err
+}
+
+func (imp *Importer) Cmd(cmd []string) ([]byte, error) {
+	cmdExec := exec.Command("/bin/bash", "-c", fmt.Sprintf("%s", strings.Join(cmd, " ")))
+	return cmdExec.CombinedOutput()
 }
 
 func (imp *Importer) Encode(code []byte) string {

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/bcicen/jstream"
 	"github.com/dop251/goja"
@@ -174,8 +175,13 @@ cat <transform.js> | mim transform test -n sdb.Animal
 		if file == "" {
 			utils.HandleError(errors.New("missing or empty file parameter"))
 		}
+		var res []byte
 		importer := NewImporter(file)
-		res, err := importer.Import()
+		if filepath.Ext(file) == ".ts"{
+			res, err = importer.ImportTs()
+		} else {
+			res, err = importer.ImportJs()
+		}
 
 		utils.HandleError(err)
 		code := string(res)
