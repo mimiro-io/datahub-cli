@@ -199,3 +199,12 @@ func SortOutputList(output [][] string, headerName string) ([][] string){
 	out = append([][]string{header}, out...)
 	return out
 }
+
+func ListContainsSubstr(s []string, e string) bool {
+	for _, a := range s {
+		if strings.Contains(a,e) {
+			return true
+		}
+	}
+	return false
+}

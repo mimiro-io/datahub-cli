@@ -20,7 +20,10 @@ import (
 	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/evanw/esbuild/pkg/cli"
+	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
+	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -34,7 +37,7 @@ func NewImporter(file string) *Importer {
 	}
 }
 
-func (imp *Importer) Import() ([]byte, error) {
+func (imp *Importer) ImportJs() ([]byte, error) {
 	result, err := imp.buildCode()
 	if err != nil {
 		return nil, err
@@ -46,6 +49,44 @@ func (imp *Importer) Import() ([]byte, error) {
 	pterm.Println(code)
 
 	return []byte(code), nil
+}
+
+func (imp *Importer) ImportTs()([]byte, error)  {
+	VerifyNodeInstallation(imp)
+
+	typescriptCmd := []string{"npx", "tt", imp.file}
+	code, err := imp.Cmd(typescriptCmd)
+
+	pterm.Println(string(code))
+	return code, err
+}
+
+func VerifyNodeInstallation(imp *Importer)  {
+	//check if node is installed
+	checkForNodeCmd := []string{"node", "-v"}
+	_, err := imp.Cmd(checkForNodeCmd)
+	if err != nil {
+		utils.HandleError(err)
+	}
+	//list out npm packages
+	checkForLibCmd := []string{"npm", "list"}
+	library, _ := imp.Cmd(checkForLibCmd)
+
+	//check if the package needed is installed.
+	pkgList := strings.Split(string(library), "\n")
+	pkgName := "datahub-tslib"
+	isPackageInstalled := utils.ListContainsSubstr(pkgList,pkgName)
+
+	if isPackageInstalled == false{
+		pterm.Error.Println(fmt.Sprintf("Missing datahub-tslib package."))
+		pterm.Error.Println(fmt.Sprintf("Please install it. https://open.mimiro.io/software/typescript/"))
+		os.Exit(1)
+	}
+}
+
+func (imp *Importer) Cmd(cmd []string) ([]byte, error) {
+	cmdExec := exec.Command("/bin/bash", "-c", fmt.Sprintf("%s", strings.Join(cmd, " ")))
+	return cmdExec.CombinedOutput()
 }
 
 func (imp *Importer) Encode(code []byte) string {

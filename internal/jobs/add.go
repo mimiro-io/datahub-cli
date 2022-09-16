@@ -21,6 +21,7 @@ import (
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"path/filepath"
 )
 
 // addCmd represents the add command
@@ -61,9 +62,15 @@ to quickly create a Cobra application.`,
 		pterm.Success.Println("Added job to server")
 
 		tfile, err := cmd.Flags().GetString("transform")
+
 		if tfile != "" {
+			var code []byte
 			importer := transform.NewImporter(tfile)
-			code, err := importer.Import()
+			if filepath.Ext(tfile) == ".ts"{
+				code, err = importer.ImportTs()
+			} else {
+				code, err = importer.ImportJs()
+			}
 			utils.HandleError(err)
 			job, err = jobManager.AddTransform(job, importer.Encode(code))
 			pterm.Success.Println("Added transform to job")

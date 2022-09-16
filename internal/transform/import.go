@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -58,7 +59,12 @@ mim transform import <my-job> -f <transform.js>
 		utils.HandleError(err)
 
 		importer := NewImporter(file)
-		code, err := importer.Import()
+		var code []byte
+		if filepath.Ext(file) == ".ts"{
+			code, err = importer.ImportTs()
+		} else {
+			code, err = importer.ImportJs()
+		}
 		utils.HandleError(err)
 
 		introSpinner.Success("Done compiling and minifying")
