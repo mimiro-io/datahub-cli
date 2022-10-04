@@ -29,6 +29,13 @@ archives:
     files:
       - README.md
       - LICENSE
+nfpms:
+  - id: datahub-cli_nfpms
+    description: Mimiro Datahub CLI
+    license: Apache 2.0
+    formats:
+      - rpm
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:
