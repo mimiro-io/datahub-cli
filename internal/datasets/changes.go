@@ -18,11 +18,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pterm/pterm"
+	"github.com/spf13/cobra"
+
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
-	"github.com/pterm/pterm"
-	"github.com/spf13/cobra"
 )
 
 var ChangesCmd = &cobra.Command{
@@ -42,6 +43,7 @@ mim dataset changes --dataset=mim.Cows
 		utils.HandleError(err)
 
 		since, err := cmd.Flags().GetString("since")
+		utils.HandleError(err)
 		dataset, err := cmd.Flags().GetString("name")
 		utils.HandleError(err)
 
@@ -51,15 +53,16 @@ mim dataset changes --dataset=mim.Cows
 
 		limit, err := cmd.Flags().GetInt("limit")
 		utils.HandleError(err)
+		reverse, err := cmd.Flags().GetBool("reverse")
+		utils.HandleError(err)
 
 		pterm.DefaultSection.Println("Listing entities from " + server + fmt.Sprintf("/datasets/%s/changes", dataset))
 
 		em := api.NewEntityManager(server, token, context.Background(), api.Changes)
 		s := outputSink(format)
 
-		err = em.Read(dataset, since, SaneLimit(format, limit), s)
+		err = em.Read(dataset, since, SaneLimit(format, limit), reverse, s)
 		utils.HandleError(err)
-
 	},
 	TraverseChildren: true,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -71,8 +74,9 @@ mim dataset changes --dataset=mim.Cows
 }
 
 func init() {
-	ChangesCmd.Flags().StringP("name", "n", "", "The dataset to list entities from")
-	ChangesCmd.Flags().Int("limit", 10, "Limits the number of entities to list")
+	ChangesCmd.Flags().StringP("name", "n", "", "The dataset to list changes from")
+	ChangesCmd.Flags().Int("limit", 10, "Limits the number of changes to list")
 	ChangesCmd.Flags().StringP("format", "f", "term", "The output format. Valid options are: term|pretty|raw")
 	ChangesCmd.Flags().StringP("since", "s", "", "Send a since token to the server")
+	ChangesCmd.Flags().BoolP("reverse", "r", false, "List dataset changes in reverse order: last change first")
 }
