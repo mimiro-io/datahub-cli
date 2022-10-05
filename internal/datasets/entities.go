@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pterm/pterm"
+	"github.com/spf13/cobra"
+
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
-	"github.com/pterm/pterm"
-	"github.com/spf13/cobra"
 )
 
 var EntitiesCmd = &cobra.Command{
@@ -64,9 +65,8 @@ mim dataset entities --name=mim.Cows
 		em := api.NewEntityManager(server, token, context.Background(), api.Entities)
 		s := outputSink(format)
 
-		err = em.Read(dataset, since, SaneLimit(format, limit), s)
+		err = em.Read(dataset, since, SaneLimit(format, limit), false, s)
 		utils.HandleError(err)
-
 	},
 	TraverseChildren: true,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

@@ -20,14 +20,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/pterm/pterm"
-	"github.com/tidwall/pretty"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"sort"
 	"time"
+
+	"github.com/pterm/pterm"
+	"github.com/tidwall/pretty"
 )
 
 type Entity struct {
@@ -123,7 +124,7 @@ func (s *StdinDatasetSource) readEntities(since string, batchSize int, processEn
 		return errors.New("no file provided and no stdin pipe")
 	} else {
 		reader := bufio.NewReader(os.Stdin)
-		//var output []byte
+		// var output []byte
 
 		/*for {
 			input, err := reader.ReadByte()
@@ -195,13 +196,13 @@ func (httpDatasetSource *httpDatasetSource) readEntities(since string, batchSize
 	defer cancel()
 
 	// set up a transport with sane defaults, but with a default content timeout of 0 (infinite)
-	var netTransport = &http.Transport{
+	netTransport := &http.Transport{
 		DialContext: (&net.Dialer{
 			Timeout: 5 * time.Second,
 		}).DialContext,
 		TLSHandshakeTimeout: 5 * time.Second,
 	}
-	var netClient = &http.Client{
+	netClient := &http.Client{
 		Transport: netTransport,
 	}
 
@@ -362,7 +363,6 @@ type ConsoleSink struct {
 }
 
 func (s *ConsoleSink) ProcessEntities(entities []*Entity) error {
-
 	for _, e := range entities {
 		if e == nil {
 			continue
@@ -389,6 +389,7 @@ func (s *ConsoleSink) Start() {
 	s.out = make([][]string, 0)
 	s.out = append(s.out, []string{"Id", "Recorded", "Deleted", "Props", "Refs"})
 }
+
 func (s *ConsoleSink) End() {
 	pterm.DefaultTable.WithHasHeader().WithData(s.out).Render()
 	pterm.Println()
@@ -504,8 +505,8 @@ func NewEntityManager(server string, token string, ctx context.Context, dsType D
 	}
 }
 
-func (em *EntityManager) Read(dataset string, since string, limit int, sink Sink) error {
-	endpoint, err := em.buildUrl(em.server, dataset, em.datasetType, limit)
+func (em *EntityManager) Read(dataset string, since string, limit int, reverse bool, sink Sink) error {
+	endpoint, err := em.buildUrl(em.server, dataset, em.datasetType, limit, reverse)
 	if err != nil {
 		return err
 	}
@@ -520,7 +521,7 @@ func (em *EntityManager) Read(dataset string, since string, limit int, sink Sink
 	return pipeline.Sync(em.ctx, since, limit)
 }
 
-func (em *EntityManager) buildUrl(server string, dataset string, t DatasetType, limit int) (*url.URL, error) {
+func (em *EntityManager) buildUrl(server string, dataset string, t DatasetType, limit int, reverse bool) (*url.URL, error) {
 	endpoint, err := url.Parse(fmt.Sprintf("%s/datasets/%s/%s", server, dataset, t))
 	if err != nil {
 		return nil, err
@@ -528,6 +529,9 @@ func (em *EntityManager) buildUrl(server string, dataset string, t DatasetType, 
 	q, _ := url.ParseQuery(endpoint.RawQuery)
 	if limit > 0 {
 		q.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	if reverse {
+		q.Add("reverse", "true")
 	}
 
 	endpoint.RawQuery = q.Encode()

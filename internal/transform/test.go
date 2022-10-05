@@ -177,7 +177,7 @@ cat <transform.js> | mim transform test -n sdb.Animal
 		}
 		var res []byte
 		importer := NewImporter(file)
-		if filepath.Ext(file) == ".ts"{
+		if filepath.Ext(file) == ".ts" {
 			res, err = importer.ImportTs()
 		} else {
 			res, err = importer.ImportJs()
@@ -246,7 +246,7 @@ func getEntities(server string, token string, dataset string, limit int) ([]*api
 		em := api.NewEntityManager(server, token, context.Background(), api.Changes)
 		collector := &api.CollectorSink{}
 
-		err := em.Read(dataset, "", datasets.SaneLimit("json", limit), collector)
+		err := em.Read(dataset, "", datasets.SaneLimit("json", limit), false, collector)
 		if err != nil {
 			return nil, err
 		}
@@ -257,7 +257,6 @@ func getEntities(server string, token string, dataset string, limit int) ([]*api
 
 		return collector.Entities, nil
 	}
-
 }
 
 func parseStdin(input []byte) ([]*api.Entity, error) {
@@ -308,7 +307,6 @@ func decodeQuery(input []byte, decoder *jstream.Decoder) ([]*api.Entity, error) 
 			default:
 				fmt.Println(mv.Value)
 			}
-
 		}
 
 		count++
@@ -320,7 +318,6 @@ func decodeQuery(input []byte, decoder *jstream.Decoder) ([]*api.Entity, error) 
 func transformEntities(entities []*api.Entity, engine *goja.Runtime) ([]*api.Entity, error) {
 	var transFunc func(entities []*api.Entity) (interface{}, error)
 	err := engine.ExportTo(engine.Get("transform_entities"), &transFunc)
-
 	if err != nil {
 		return nil, err
 	}
