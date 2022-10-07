@@ -14,6 +14,10 @@
 
 package printer
 
+import (
+	"github.com/mimiro-io/datahub-cli/internal/api"
+)
+
 type Printer interface {
 	Print(entities []interface{})
 	BatchSize() int
@@ -21,13 +25,32 @@ type Printer interface {
 	Footer()
 }
 
-func NewPrinter(format string, batchSize int) Printer {
-	switch format {
-	case "pretty":
-		return &PrettyPrint{Batch: batchSize}
-	case "raw", "json":
-		return &Raw{Batch: 1000}
-	default:
-		return &term{batchSize: batchSize}
+type ExpandingPrinter struct {
+	Printer Printer
+	fExpand func(string) string
+}
+
+func (p *ExpandingPrinter) BatchSize() int {
+	return p.Printer.BatchSize()
+}
+
+func (p *ExpandingPrinter) Header(entity interface{}) {
+	nsMap := entity.(*api.Entity).Properties["namespaces"].(map[string]interface{})
+	p.fExpand = api.ValueExpander(nsMap)
+	p.Printer.Header(entity)
+}
+
+func (p *ExpandingPrinter) Footer() {
+	p.Printer.Footer()
+}
+
+func (p *ExpandingPrinter) Print(input []interface{}) {
+	for _, e := range input {
+		row := e.([]interface{})
+		row[0] = p.fExpand(row[0].(string)) // expand start id
+		row[1] = p.fExpand(row[1].(string)) // expand predicatetUri
+		obj := row[2].(*api.Entity)
+		api.ExpandEntity(obj, p.fExpand)
 	}
+	p.Printer.Print(input)
 }

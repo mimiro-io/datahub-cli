@@ -30,12 +30,13 @@ import (
 )
 
 type cmds struct {
-	id      string
-	entity  []string
-	via     string
-	inverse bool
-	json    bool
-	pretty  bool
+	id       string
+	entity   []string
+	via      string
+	inverse  bool
+	json     bool
+	pretty   bool
+	expanded bool
 	datasets []string
 }
 
@@ -63,10 +64,14 @@ mim query --entity <entityURI> --via <predicateURI> --inverse true | false
 		server, token, err := login.ResolveCredentials()
 		utils.HandleError(err)
 
+		sink := outputSink(format)
+		if c.expanded {
+			sink = api.SinkExpander{Sink: sink}
+		}
 		if c.id != "" {
 			out, err := queryScalar(c, server, token)
 			utils.HandleError(err)
-			err = outputEntities(out, outputSink(format))
+			err = outputEntities(out, sink)
 			utils.HandleError(err)
 		} else {
 			result, err := queryEntities(c, server, token)
@@ -75,10 +80,13 @@ mim query --entity <entityURI> --via <predicateURI> --inverse true | false
 			outputAsEntities, _ := cmd.Flags().GetBool("output-entities")
 			if outputAsEntities && format == "json" {
 				entities := getEntities(result)
-				err = outputEntities(entities, outputSink(format))
+				err = outputEntities(entities, sink)
 				utils.HandleError(err)
 			} else {
 				pr := newPrinter(format, 50)
+				if c.expanded {
+					pr = &printer.ExpandingPrinter{Printer: pr}
+				}
 				pr.Header(result[0])
 				pr.Print(result[1 : len(result)-1])
 				pr.Footer()
@@ -222,6 +230,7 @@ func resolveCmds(cmd *cobra.Command, args []string) cmds {
 	c.json, _ = cmd.Flags().GetBool("json")
 	c.pretty, _ = cmd.Flags().GetBool("pretty")
 	c.datasets, _ = cmd.Flags().GetStringArray("datasets")
+	c.expanded, _ = cmd.Flags().GetBool("expanded")
 	return c
 }
 
@@ -257,6 +266,7 @@ func init() {
 	QueryCmd.Flags().Bool("inverse", false, "Indicates if the traversal is out from the entities or incoming")
 	QueryCmd.Flags().Bool("output-entities", true, "If this is an entity query, and the output is json, then this outputs only the list of entities")
 	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "add a list of datasets to filter in with '<dataset-name>, <dataset-name>'")
+	QueryCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities with full namespace URIs")
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
