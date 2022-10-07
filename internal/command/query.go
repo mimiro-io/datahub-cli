@@ -266,7 +266,7 @@ func init() {
 	QueryCmd.Flags().Bool("inverse", false, "Indicates if the traversal is out from the entities or incoming")
 	QueryCmd.Flags().Bool("output-entities", true, "If this is an entity query, and the output is json, then this outputs only the list of entities")
 	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "add a list of datasets to filter in with '<dataset-name>, <dataset-name>'")
-	QueryCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities with full namespace URIs")
+	QueryCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()

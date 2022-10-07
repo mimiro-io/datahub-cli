@@ -85,5 +85,5 @@ func init() {
 	ChangesCmd.Flags().StringP("format", "f", "term", "The output format. Valid options are: term|pretty|raw")
 	ChangesCmd.Flags().StringP("since", "s", "", "Send a since token to the server")
 	ChangesCmd.Flags().BoolP("reverse", "r", false, "List dataset changes in reverse order: last change first")
-	ChangesCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities with full namespace URIs")
+	ChangesCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 }

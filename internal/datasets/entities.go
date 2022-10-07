@@ -98,7 +98,7 @@ func init() {
 	EntitiesCmd.Flags().Int("limit", 10, "Limits the number of entities to list")
 	EntitiesCmd.Flags().StringP("format", "f", "term", "The output format. Valid options are: term|pretty|raw")
 	EntitiesCmd.Flags().StringP("since", "s", "", "Send a since token to the server")
-	EntitiesCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities with full namespace URIs")
+	EntitiesCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 }
 
 func SaneLimit(format string, limit int) int {
