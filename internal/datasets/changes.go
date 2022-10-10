@@ -53,14 +53,20 @@ mim dataset changes --dataset=mim.Cows
 
 		limit, err := cmd.Flags().GetInt("limit")
 		utils.HandleError(err)
+
 		reverse, err := cmd.Flags().GetBool("reverse")
 		utils.HandleError(err)
 
-		pterm.DefaultSection.Println("Listing entities from " + server + fmt.Sprintf("/datasets/%s/changes", dataset))
+		expanded, err := cmd.Flags().GetBool("expanded")
+		utils.HandleError(err)
+
+		pterm.DefaultSection.Println("Listing changes from " + server + fmt.Sprintf("/datasets/%s/changes", dataset))
 
 		em := api.NewEntityManager(server, token, context.Background(), api.Changes)
 		s := outputSink(format)
-
+		if expanded {
+			s = &api.SinkExpander{Sink: s}
+		}
 		err = em.Read(dataset, since, SaneLimit(format, limit), reverse, s)
 		utils.HandleError(err)
 	},
@@ -79,4 +85,5 @@ func init() {
 	ChangesCmd.Flags().StringP("format", "f", "term", "The output format. Valid options are: term|pretty|raw")
 	ChangesCmd.Flags().StringP("since", "s", "", "Send a since token to the server")
 	ChangesCmd.Flags().BoolP("reverse", "r", false, "List dataset changes in reverse order: last change first")
+	ChangesCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 }

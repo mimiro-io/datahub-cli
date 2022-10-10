@@ -1,6 +1,6 @@
 module github.com/mimiro-io/datahub-cli
 
-go 1.18
+go 1.19
 
 require (
 	github.com/MichaelMure/go-term-markdown v0.1.4
@@ -47,7 +47,7 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69 // indirect
 	golang.org/x/net v0.0.0-20221004154528-8021a29435af // indirect
-	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
+	golang.org/x/sys v0.0.0-20221006211917-84dc82d7e875 // indirect
 	golang.org/x/term v0.0.0-20220919170432-7a66f970e087 // indirect
 	golang.org/x/text v0.3.7
 	gopkg.in/ini.v1 v1.67.0 // indirect

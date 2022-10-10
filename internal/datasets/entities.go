@@ -60,11 +60,16 @@ mim dataset entities --name=mim.Cows
 		limit, err := cmd.Flags().GetInt("limit")
 		utils.HandleError(err)
 
+		expanded, err := cmd.Flags().GetBool("expanded")
+		utils.HandleError(err)
+
 		pterm.DefaultSection.Println("Listing entities from " + server + fmt.Sprintf("/datasets/%s/entities", dataset))
 
 		em := api.NewEntityManager(server, token, context.Background(), api.Entities)
 		s := outputSink(format)
-
+		if expanded {
+			s = &api.SinkExpander{Sink: s}
+		}
 		err = em.Read(dataset, since, SaneLimit(format, limit), false, s)
 		utils.HandleError(err)
 	},
@@ -93,6 +98,7 @@ func init() {
 	EntitiesCmd.Flags().Int("limit", 10, "Limits the number of entities to list")
 	EntitiesCmd.Flags().StringP("format", "f", "term", "The output format. Valid options are: term|pretty|raw")
 	EntitiesCmd.Flags().StringP("since", "s", "", "Send a since token to the server")
+	EntitiesCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 }
 
 func SaneLimit(format string, limit int) int {
