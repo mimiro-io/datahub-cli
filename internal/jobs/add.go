@@ -15,12 +15,14 @@
 package jobs
 
 import (
+	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/transform"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"os"
 	"path/filepath"
 )
 
@@ -72,7 +74,13 @@ to quickly create a Cobra application.`,
 				code, err = importer.ImportJs()
 			}
 			utils.HandleError(err)
+
 			job, err = jobManager.AddTransform(job, importer.Encode(code))
+			if (err != nil){
+				pterm.Error.Println(fmt.Sprintf("Could not add Transform to job. Response from datahub was: %s", err))
+				pterm.Println()
+				os.Exit(1)
+			}
 			pterm.Success.Println("Added transform to job")
 		}
 
