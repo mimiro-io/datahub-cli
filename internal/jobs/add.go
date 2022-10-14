@@ -57,6 +57,11 @@ to quickly create a Cobra application.`,
 		pterm.Success.Println("Read config file")
 
 		jobManager := api.NewJobManager(server, token)
+		job, err := jobManager.AddJob(config)
+
+		utils.HandleError(err)
+
+		pterm.Success.Println("Added job to server")
 
 		tfile, err := cmd.Flags().GetString("transform")
 
@@ -70,10 +75,6 @@ to quickly create a Cobra application.`,
 			}
 			utils.HandleError(err)
 
-			job, err := jobManager.AddJob(config)
-			utils.HandleError(err)
-			pterm.Success.Println("Added job to server")
-
 			job, err = jobManager.AddTransform(job, importer.Encode(code))
 			if (err != nil){
 				pterm.Error.Println(fmt.Sprintf("Could not add Transform to job. Response from datahub was: %s", err))
@@ -81,10 +82,6 @@ to quickly create a Cobra application.`,
 				os.Exit(1)
 			}
 			pterm.Success.Println("Added transform to job")
-		} else {
-			_, err := jobManager.AddJob(config)
-			utils.HandleError(err)
-			pterm.Success.Println("Added job to server")
 		}
 
 		pterm.Println()
