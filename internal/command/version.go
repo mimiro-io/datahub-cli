@@ -15,12 +15,13 @@
 package command
 
 import (
-	"io"
-	"os"
-
+	_ "embed"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
+
+//go:embed VERSION
+var version string
 
 var VersionCmd = &cobra.Command{
 	Use:     "version",
@@ -28,18 +29,7 @@ var VersionCmd = &cobra.Command{
 	Short:   "See cli version",
 	Long:    `See semantic version for this cli release.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		versionFile, err := os.Open("VERSION")
-		if err != nil {
-			pterm.Error.Println("Unable to open version file: ", err)
-			os.Exit(1)
-		}
-		defer versionFile.Close()
-		version, err := io.ReadAll(versionFile)
-		if err != nil {
-			pterm.Error.Println("Unable to read version file: ", err)
-			os.Exit(1)
-		}
-		pterm.Println(string(version))
+		pterm.Println(version)
 	},
 }
 

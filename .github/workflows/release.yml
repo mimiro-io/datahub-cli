@@ -28,7 +28,7 @@ jobs:
         id: version_file
         run: |
           versionTag=$(echo $GITHUB_REF | cut -d / -f 3)
-          echo "versionTag" > "VERSION"
+          echo "versionTag" > "internal/command/VERSION"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@master
