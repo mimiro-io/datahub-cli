@@ -24,6 +24,12 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v2.3.4
 
+      - name: Write version file
+        id: version_file
+        run: |
+          versionTag=$(echo $GITHUB_REF | cut -d / -f 3)
+          echo "versionTag" > "internal/command/VERSION"
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@master
         with:
