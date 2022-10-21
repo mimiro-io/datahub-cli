@@ -15,13 +15,14 @@
 package command
 
 import (
+	"embed"
 	_ "embed"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
-//go:embed VERSION
-var version string
+//go:embed *
+var versionDir embed.FS
 
 var VersionCmd = &cobra.Command{
 	Use:     "version",
@@ -29,6 +30,13 @@ var VersionCmd = &cobra.Command{
 	Short:   "See cli version",
 	Long:    `See semantic version for this cli release.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		versionFile, err := versionDir.ReadFile("VERSION")
+		var version string
+		if err == nil {
+			version = string(versionFile)
+		} else {
+			version = "Only available on released binaries"
+		}
 		pterm.Println(version)
 	},
 }
