@@ -17,8 +17,9 @@ package command
 import (
 	"context"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"os"
+
+	"github.com/mimiro-io/datahub-cli/internal/docs"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/datasets/printer"
@@ -38,6 +39,7 @@ type cmds struct {
 	pretty   bool
 	expanded bool
 	datasets []string
+	details  bool
 }
 
 // describeCmd represents the describe command
@@ -164,7 +166,6 @@ func (t *term) Print(entities []interface{}) {
 	} else {
 		pterm.DefaultTable.WithData(out).Render()
 	}
-
 }
 
 func (t *term) Header(entity interface{}) {
@@ -183,7 +184,6 @@ func (t *term) BatchSize() int {
 }
 
 func (t *term) prettyEntity(id string, e []interface{}) []string {
-
 	obj := e[2].(*api.Entity)
 
 	return []string{
@@ -215,7 +215,6 @@ func outputEntities(output []*api.Entity, sink api.Sink) error {
 	source := &api.EntityListDatasource{Entities: output}
 	pipeline := api.NewPipeline(source, sink)
 	return pipeline.Sync(context.Background(), "", 0)
-
 }
 
 func resolveCmds(cmd *cobra.Command, args []string) cmds {
@@ -231,6 +230,7 @@ func resolveCmds(cmd *cobra.Command, args []string) cmds {
 	c.pretty, _ = cmd.Flags().GetBool("pretty")
 	c.datasets, _ = cmd.Flags().GetStringArray("datasets")
 	c.expanded, _ = cmd.Flags().GetBool("expanded")
+	c.details, _ = cmd.Flags().GetBool("details")
 	return c
 }
 
@@ -239,7 +239,7 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 
 	qb := queries.NewQueryBuilder(server, token)
 
-	res, err := qb.QuerySingle(c.id, c.datasets)
+	res, err := qb.QuerySingle(c.id, c.details, c.datasets)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +248,6 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 	out = append(out, res)
 
 	return out, nil
-
 }
 
 // queryEntities should return a list of [@context, [id, predicate, Entity]]
@@ -259,7 +258,6 @@ func queryEntities(c cmds, server string, token string) ([]interface{}, error) {
 }
 
 func init() {
-
 	QueryCmd.Flags().StringP("id", "i", "", "The id of the entity you want to fetch")
 	QueryCmd.Flags().StringArray("entity", make([]string, 0), "The URI of the entity to use as start of traversal. May be repeated for batch lookups")
 	QueryCmd.Flags().String("via", "", "The URI of the traversal reference type")
@@ -267,6 +265,7 @@ func init() {
 	QueryCmd.Flags().Bool("output-entities", true, "If this is an entity query, and the output is json, then this outputs only the list of entities")
 	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "add a list of datasets to filter in with '<dataset-name>, <dataset-name>'")
 	QueryCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
+	QueryCmd.Flags().Bool("details", false, "Works only with --id/-i query. Inject entity details into entity result.")
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()

@@ -18,8 +18,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"net/url"
+
+	"github.com/mimiro-io/datahub-cli/internal/web"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 )
@@ -76,10 +77,13 @@ func NewQueryBuilder(server string, token string) *QueryBuilder {
 	}
 }
 
-func (qb *QueryBuilder) QuerySingle(entityId string, datasets []string) (*api.Entity, error) {
+func (qb *QueryBuilder) QuerySingle(entityId string, details bool, datasets []string) (*api.Entity, error) {
 	q := make(map[string]interface{})
 	q["entityId"] = entityId
 	q["datasets"] = datasets
+	if details {
+		q["details"] = details
+	}
 
 	content, err := json.Marshal(&q)
 	if err != nil {
@@ -144,10 +148,9 @@ func (qb *QueryBuilder) Query(startingEntities []string, predicate string, inver
 		return nil, err
 	}
 
-	//pterm.Println(entities)
+	// pterm.Println(entities)
 
 	return &QueryResult{Data: entities}, nil
-
 }
 
 func (qb *QueryBuilder) GetNamespacePrefix(urlExpansion string) (string, error) {
