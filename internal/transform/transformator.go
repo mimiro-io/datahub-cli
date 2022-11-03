@@ -16,9 +16,10 @@ package transform
 
 import (
 	"fmt"
-	"github.com/gofrs/uuid"
 	"strconv"
 	"strings"
+
+	"github.com/gofrs/uuid"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 
@@ -32,8 +33,8 @@ type transformer struct {
 	assertedPrefixes map[string]string
 }
 
-func (tf *transformer) Log(thing interface{}, logLevel string ) {
-	switch strings.ToLower(logLevel)  {
+func (tf *transformer) Log(thing interface{}, logLevel string) {
+	switch strings.ToLower(logLevel) {
 	case "info":
 		pterm.Info.Println(fmt.Sprintf("- %v", thing))
 	case "warn", "warning":
@@ -103,7 +104,7 @@ func (tf *transformer) Query(startingEntities []string, predicate string, invers
 }
 
 func (tf *transformer) ById(entityId string) *api.Entity {
-	entity, err := tf.query.QuerySingle(entityId, []string{})
+	entity, err := tf.query.QuerySingle(entityId, false, []string{})
 	if err != nil {
 		return nil
 	}
