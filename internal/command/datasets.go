@@ -50,7 +50,7 @@ func init() {
 	DatasetCmd.AddCommand(datasets.EntitiesCmd)
 	DatasetCmd.AddCommand(datasets.ChangesCmd)
 	DatasetCmd.AddCommand(datasets.DeleteCmd)
-	DatasetCmd.AddCommand(datasets.CreateCmd)
+	DatasetCmd.AddCommand(datasets.CreateCmd())
 	DatasetCmd.AddCommand(datasets.GetCmd)
 	DatasetCmd.AddCommand(datasets.StoreCmd)
 	DatasetCmd.AddCommand(datasets.RenameCmd)

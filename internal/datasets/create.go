@@ -26,77 +26,76 @@ import (
 	"strings"
 )
 
-// deleteCmd represents the delete command
-var CreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create dataset with given name",
-	Long: `Create a dataset with given name, For example:
+// CreateCmd represents the delete command
+func CreateCmd() *cobra.Command {
+
+	var (
+		name              []string
+		publicNamespaces  []string
+		proxy             bool
+		proxyRemoteUrl    string
+		proxyAuthProvider string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create dataset with given name",
+		Long: `Create a dataset with given name, For example:
 mim dataset create --name <name>
 or
 mim dataset create <name>
 `,
-	Run: func(cmd *cobra.Command, args []string) {
-		server, token, err := login.ResolveCredentials()
-		utils.HandleError(err)
-
-		pterm.EnableDebugMessages()
-
-		name, err := cmd.Flags().GetStringSlice("name")
-		utils.HandleError(err)
-
-		publicNamespaces, err := cmd.Flags().GetStringSlice("publicNamespaces")
-		utils.HandleError(err)
-
-		createDatasetConfig := &CreateDatasetConfig{}
-		createDatasetConfig.PublicNamespaces = publicNamespaces
-
-		proxy, err := cmd.Flags().GetBool("proxy")
-		utils.HandleError(err)
-
-		if proxy {
-			createDatasetConfig.ProxyDatasetConfig = &ProxyDatasetConfig{}
-			proxyRemoteUrl, err := cmd.Flags().GetString("proxyRemoteUrl")
+		Run: func(cmd *cobra.Command, args []string) {
+			server, token, err := login.ResolveCredentials()
 			utils.HandleError(err)
-			if proxyRemoteUrl == "" {
-				utils.HandleError(errors.New("proxyRemoteUrl required when proxy=true"))
-			}
-			createDatasetConfig.ProxyDatasetConfig.RemoteUrl = proxyRemoteUrl
-			proxyAuthProvider, err := cmd.Flags().GetString("proxyAuthProvider")
-			utils.HandleError(err)
-			createDatasetConfig.ProxyDatasetConfig.AuthProviderName = proxyAuthProvider
-		}
 
-		if len(args) > 0 {
-			name = strings.Split(args[0], ",")
-		}
-		if len(name) == 0 {
-			pterm.Warning.Println("You must provide a dataset name")
-			pterm.Println()
-			os.Exit(1)
-		}
-		for _, i := range name {
-			err = updateDataset(server, token, i, createDatasetConfig)
-			if len(name) == 1 {
-				utils.HandleError(err)
-			}
-			if err != nil {
-				pterm.Error.Println(err.Error())
-				continue
-			}
-			pterm.Success.Printf("Dataset '%s' has been created", i)
-			pterm.Println()
-		}
+			pterm.EnableDebugMessages()
 
-	},
-	TraverseChildren: true,
-}
+			// verify that name is present
+			if len(name) == 0 && len(args) > 0 {
+				name = strings.Split(args[0], ",")
+			}
+			if len(name) == 0 {
+				pterm.Warning.Println("You must provide a dataset name")
+				pterm.Println()
+				os.Exit(1)
+			}
 
-func init() {
-	CreateCmd.Flags().StringSlice("name", nil, "The dataset to create. ")
-	CreateCmd.Flags().StringSlice("publicNamespaces", nil, "list of public namespaces for dataset")
-	CreateCmd.Flags().Bool("proxy", false, "flag dataset as proxy dataset")
-	CreateCmd.Flags().String("proxyRemoteUrl", "", "url of proxied remote dataset")
-	CreateCmd.Flags().String("proxyAuthProvider", "", "name of token provider to be used with requests against remote")
+			createDatasetConfig := &CreateDatasetConfig{}
+			createDatasetConfig.PublicNamespaces = publicNamespaces
+
+			if proxy {
+				createDatasetConfig.ProxyDatasetConfig = &ProxyDatasetConfig{}
+				if proxyRemoteUrl == "" {
+					utils.HandleError(errors.New("proxyRemoteUrl required when proxy=true"))
+				}
+				createDatasetConfig.ProxyDatasetConfig.RemoteUrl = proxyRemoteUrl
+				createDatasetConfig.ProxyDatasetConfig.AuthProviderName = proxyAuthProvider
+			}
+
+			for _, i := range name {
+				err = updateDataset(server, token, i, createDatasetConfig)
+				if len(name) == 1 {
+					utils.HandleError(err)
+				}
+				if err != nil {
+					pterm.Error.Println(err.Error())
+					continue
+				}
+				pterm.Success.Printf("Dataset '%s' has been created", i)
+				pterm.Println()
+			}
+
+		},
+		TraverseChildren: true,
+	}
+	cmd.Flags().StringSliceVar(&name, "name", nil, "The dataset to create. ")
+	cmd.Flags().StringSliceVar(&publicNamespaces, "publicNamespaces", nil, "list of public namespaces for dataset")
+	cmd.Flags().BoolVar(&proxy, "proxy", false, "flag dataset as proxy dataset")
+	cmd.Flags().StringVar(&proxyRemoteUrl, "proxyRemoteUrl", "", "url of proxied remote dataset")
+	cmd.Flags().StringVar(&proxyAuthProvider, "proxyAuthProvider", "", "name of token provider to be used with requests against remote")
+
+	return cmd
 }
 
 type ProxyDatasetConfig struct {
