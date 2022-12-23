@@ -42,10 +42,10 @@ If you want a pre-built binary then this can be obtained from the [releases](htt
 
 `mim` can be used to connect to the MIMIRO data hub, MIMIRO data layers or any other UDA compliant endpoint. 
 
-It is recommended to create an alias for each distinct service endpoint you want to connect to. To setup and connection to a local unsecured MIMIRO data hub instance create the following alias:
+It is recommended to create an alias for each distinct service endpoint you want to connect to. To setup and connection to a local unsecured MIMIRO data hub instance create the following login alias:
 
 ```
-mim login add --alias local --server http://localhost:8080
+mim login add --alias local --server http://localhost:8080 --type unsecured
 ```
 
 To see all registered aliases and where they connect to use:
