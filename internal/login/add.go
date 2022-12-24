@@ -56,7 +56,7 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 		loginType, err := cmd.Flags().GetString("type")
 		driver.RenderError(err, true)
 		if loginType == "" {
-			driver.RenderError(eris.New("you must set a login type. ie. --type user|client|cert|unsecured|admin"), true)
+			driver.RenderError(eris.New("you must set a login type. ie. --type token|user|client|cert|unsecured|admin"), true)
 		}
 
 		data := &config.Config{
@@ -98,9 +98,11 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 			// this needs only auth server
 			authorizer, _ := cmd.Flags().GetString("authorizer")
 			data.Authorizer = authorizer
+		case "token":
+			data.Token = token // allow empty token
 		case "unsecured":
 		default:
-			data.Token = token // allow empty token
+			driver.RenderError(errors.New("invalid type. Allowed types are: token|user|client|cert|unsecured|admin"), true)
 		}
 
 		err = config.Store(alias, data)
