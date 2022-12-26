@@ -17,8 +17,9 @@ package datahub_mim_cli
 
 import (
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"os"
+
+	"github.com/mimiro-io/datahub-cli/internal/web"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
 
@@ -76,6 +77,7 @@ func addCommands() {
 	RootCmd.AddCommand(command.ClientCmd)
 	RootCmd.AddCommand(command.ProviderCmd)
 	RootCmd.AddCommand(command.VersionCmd)
+	RootCmd.AddCommand(command.GatewayCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -1,0 +1,333 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>MIMIRO - Data Gateway</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport" />
+    <!-- font awesome  -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous" />
+    <!-- Bootstrap 4 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+
+    
+    <!-- <script src="static/js/jquery.min.js"></script> -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.min.js" integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"></script>
+
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+    <!-- CSS
+    –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <link rel="stylesheet" href="static/css/normalize.css">
+    <link rel="stylesheet" href="static/css/skeleton.css">
+   
+
+    <style type="text/css">
+    .border_dot{
+  border:1px dashed #ccc;
+}
+
+
+.cmodal {
+  position: relative;
+}
+
+.cmodal .modal-dialog {
+  position: fixed;
+  max-width: 100%;
+  box-shadow: 0 0 5px rgba(0,0,0,.5);
+  background: var(--white);
+  /* width:500px; */
+  margin: 0;
+  /* padding: 20px; */
+  /* overflow: hidden; */
+  /* resize: both; */
+}
+
+.cmodal .modal-content {
+  /* padding: 20px; */
+  height: 400px;
+  overflow: hidden;
+  resize: both;
+  width:500px;
+}
+
+.cmodal .modal-body{
+  height:relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.cmodal .modal-header{
+  background: var(--dark);
+  color: var(--white);
+  border-bottom: 0px;
+  padding: 0px;
+}
+
+.cmodal .modal-header h3{
+  color: var(--white);
+  font-size: 18px;
+}
+
+.cmodal .close_btn{
+    top: -2px;
+    margin: 0px !important;
+    opacity: 1;
+    width: 30px;
+    height: 30px;
+    padding: 0px;
+    color: #fff;
+}
+
+.custom_tab_on_editor{
+  background: var(--orange);
+    padding: 0px;
+    margin: 0px;
+}
+
+.custom_tab_on_editor .nav-item{
+  margin-bottom: 0px;
+}
+.custom_tab_on_editor .nav-item .nav-link {
+  min-width: 100px;
+  text-align: center;
+  border: 0px solid transparent;
+  border-radius: 0px;
+  padding: 10px;
+  color:var(--white)
+}
+
+.custom_tab_on_editor .nav-item .nav-link:hover {
+    color: #ffffff;
+    border-width: 0px;
+    background: #ffb586;
+    border-bottom: 0px solid transparent;
+}
+
+
+.custom_tab_on_editor .nav-item.show .nav-link, .custom_tab_on_editor .nav-link.active {
+  color: #ffffff;
+  border-width: 0px;
+  background: #ffb586;
+  border-bottom: 0px solid transparent;
+  position: relative;
+}
+.dragable_touch{
+  cursor: move;
+}
+
+.custom_tab_on_editor .nav-item.show .nav-link:before, .custom_tab_on_editor .nav-link.active:before{
+    content: '';
+    border-bottom: 10px solid var(--white);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    position: absolute;
+    bottom: 0px;
+    left:50%;
+    transform: translateX(-50%);
+}
+
+ .icon {
+    float: inline-end;
+  }
+    </style>
+  </head>
+
+  <body>
+
+    <div style="width: 100%; background-color: black; color: #ffffff;font-size: 30px;">
+        <span style="padding-left:15px;padding-top: 5px;text-align: left;">MIMIRO Data Gateway</span>
+        <a onclick="openDatasetsListWindow();" href="#" style="float: right;color: #ffffff;font-size: 20px;margin-right: 20px;margin-top: 10px;">Datasets</a>
+        <a onclick="openJobsListWindow();"href="#" style="float: right;color: #ffffff;font-size: 20px;padding-right: 10px;margin-top: 10px;">Jobs</a>
+        <a href="#" style="float: right;color: #ffffff;font-size: 20px;padding-right: 10px;margin-top: 10px;">Catalog</a>
+        <a href="#" style="float: right;color: #ffffff;font-size: 20px;padding-right: 10px;margin-top: 10px;">Navigator</a>
+    </div>
+
+    <div id="main_content">
+
+    </div>
+
+    
+<script type="text/javascript">
+
+async function openDatasetsListWindow() {
+
+    let win_html = `
+<div class="modal fade cmodal" id="dragable_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header w-100" style="background-color: black">
+            <div class="row m-0 w-100">
+              <div class="col-md-12 px-4 p-2 dragable_touch d-block">
+                <h3 class="m-0 d-inline">Datasets</h3>
+                <button type="button" class="close close_btn" data-dismiss="modal" aria-label="Close" data-backdrop="static" data-keyboard="false">
+                    <i class="fa fa-times"></i>
+                </button>
+              </div>              
+            </div>            
+          </div>
+
+          <div id="datasets_content" class="modal-body p-3">
+          </div>
+        </div>
+      </div>
+    </div>
+`;
+
+    let body = $('#main_content');
+    body.append(win_html);
+
+    let windowbody = $('#datasets_content');
+    let content = await do_get("/views/datasets");
+    windowbody.append(content);
+
+    $('#dragable_modal').modal({
+        backdrop: false,
+        show: true
+    });
+
+    $('.modal-dialog').draggable({
+        cursor:"move",
+        handle: ".dragable_touch"
+    });
+}
+
+async function do_get(url) {
+  let response = await fetch(url);
+
+  if (response.ok) {
+    let html = await response.text();
+    return html;
+  } else {
+    console.log("HTTP-Error: " + response.status);
+  }
+}
+
+function openJobsListWindow() {
+    let win_html = `
+<div class="modal fade cmodal" id="dragable_modal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" data-backdrop="static" data-keyboard="false">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header w-100" style="background-color: black">
+            <div class="row m-0 w-100">
+              <div class="col-md-12 px-4 p-2 dragable_touch d-block">
+                <h3 class="m-0 d-inline">Jobs</h3>
+                <button type="button" class="close close_btn" data-dismiss="modal" aria-label="Close" data-backdrop="static" data-keyboard="false" onclick="alert('remove window')">
+                    <i class="fa fa-times"></i>
+                </button>
+              </div>              
+            </div>            
+          </div>
+
+          <div class="modal-body p-3">
+            <table class="u-full-width">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Url</th>
+                    <th>Is Running</th>
+                    <th>Last Run At</th>
+                    <th>Last Run Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><a href="job.html">core.ImportPeople</a></td>
+                        <td>http://local.io/datahub/api/jobs/core.ImportPeople</td>
+                        <td>False</td>
+                        <td>24:03:2022T12:00:00</td>
+                        <td>Success</td>
+                      </tr>
+                      <tr>
+                        <td><a href="job.html">core.ImportCompanies</a></td>
+                        <td>http://local.io/datahub/api/jobs/core.ImportPeople</td>
+                        <td>False</td>
+                        <td>24:03:2022T12:00:00</td>
+                        <td>Success</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </div>
+        </div>
+      </div>
+    </div>
+`;
+
+    console.log("show it");
+    let body = $('#main_content');
+    console.log(body);
+    body.append(win_html);
+
+    $('#dragable_modal1').modal({
+        backdrop: false,
+        show: true
+    });
+
+    $('.modal-dialog').draggable({
+        cursor:"move",
+        handle: ".dragable_touch"
+    });
+
+}
+
+function openJobWindow() {
+
+}
+
+function openDatasetWindow() {
+
+}
+
+function openEntityWindow() {
+
+}
+
+function getRelatedEntityList() {
+
+}
+
+function openWindow(title, loadFunction) {
+    // get model html from server
+
+    // add to document
+
+    // show it
+
+    // call the load function
+}
+
+
+// modal draggable
+$('#edit_row_btn').click(function() {
+  
+
+  //open modal
+  $('#dragable_modal').modal({
+    backdrop: false,
+    show: true
+  });
+  // reset modal if it isn't visible
+  if (!($('.modal.in').length)) {
+    $('.modal-dialog').css({
+      top: 20,
+      left: 100
+    });
+  }
+
+  $('.modal-dialog').draggable({
+    cursor:"move",
+    handle: ".dragable_touch"
+  });
+});
+
+
+    </script>
+  </body>
+</html>
+{{end}}
