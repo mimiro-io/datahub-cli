@@ -16,6 +16,7 @@ package login
 
 import (
 	"errors"
+
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/pterm/pterm"
@@ -55,7 +56,7 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 		loginType, err := cmd.Flags().GetString("type")
 		driver.RenderError(err, true)
 		if loginType == "" {
-			driver.RenderError(eris.New("you must set a login type. ie. --type user|client|cert"), true)
+			driver.RenderError(eris.New("you must set a login type. ie. --type token|user|client|cert|unsecured|admin"), true)
 		}
 
 		data := &config.Config{
@@ -97,8 +98,11 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 			// this needs only auth server
 			authorizer, _ := cmd.Flags().GetString("authorizer")
 			data.Authorizer = authorizer
-		default:
+		case "token":
 			data.Token = token // allow empty token
+		case "unsecured":
+		default:
+			driver.RenderError(errors.New("invalid type. Allowed types are: token|user|client|cert|unsecured|admin"), true)
 		}
 
 		err = config.Store(alias, data)
@@ -117,5 +121,5 @@ func init() {
 	AddCmd.Flags().StringP("clientSecret", "", "", "A client secret to use in an id/secret pair")
 	AddCmd.Flags().StringP("authorizer", "", "", "The authentication server to use with the id/secret")
 	AddCmd.Flags().StringP("audience", "", "", "The audience to use for the token")
-	AddCmd.Flags().StringP("type", "", "", "One of: token, client or user.")
+	AddCmd.Flags().StringP("type", "", "", "One of: admin, client, cert, unsecured or user.")
 }
