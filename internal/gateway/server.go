@@ -29,7 +29,7 @@ func StartGateway(alias string, port string) {
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
 
 	e.GET("/", func(c echo.Context) error {
-		return c.Render(http.StatusOK, "index", "ok")
+		return c.Render(http.StatusOK, "index", alias)
 	})
 
 	e.GET("/views/datasets", func(c echo.Context) error {
