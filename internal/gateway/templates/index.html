@@ -88,6 +88,7 @@
     .icon {
       float: inline-end;
     }
+
   </style>
 </head>
 
@@ -109,16 +110,22 @@
 
   <script type="text/javascript">
 
-    // showWindow used to open a new window and show provided contents
-    function showWindow(id, title, content) {
-      let existingWindow = $('#' + id);
+      function updateWindowContent(id, content) {
+          let windowbody = $(document.getElementById(id + '_content'));
+          windowbody.html(content);
+      }
+
+          // showWindow used to open a new window and show provided contents
+    function showWindow(id, title, content, menuitems) {
+
+        let existingWindow = $(document.getElementById(id)); // $('#' + id);
 
       // dont add the window if already there
       if (existingWindow.length != 0) {
         return;
       }
 
-      // main content is always present 
+      // main content is always present
       // and the container for all window elements
       let body = $('#main_content');
 
@@ -131,11 +138,11 @@
             <div class="row m-0 w-100">
               <div class="col-md-12 px-4 p-2 dragable_touch d-block">
                 <h3 class="m-0 d-inline">${title}</h3>
-                <button type="button" class="close close_btn" data-dismiss="modal" aria-label="Close" data-backdrop="static" data-keyboard="false" onclick="removeWindow('${id}')"">
+                <button id="${id}_close_button" style="float: right" type="button" class="close close_btn" data-dismiss="modal" aria-label="Close" data-backdrop="static" data-keyboard="false" onclick="removeWindow('${id}')"">
                     <i class="fa fa-times"></i>
                 </button>
-              </div>              
-            </div>            
+              </div>
+            </div>
           </div>
 
           <div id="${id}_content" class="modal-body p-3">
@@ -147,16 +154,25 @@
 
       body.append(window_html);
 
-      // add the window content 
-      let windowbody = $('#' + id + '_content');
+      if (menuitems) {
+          let closeButton = $(document.getElementById(id + "_close_button"));
+        menuitems.forEach(x => {
+            let itemHtml =  $(`<a href="#somethnig" style="float: right;color: #ffffff;font-size: 15px;margin-right: 10px;margin-top: 5px;">` + x.label + `</a>`);
+            itemHtml.click(x.f);
+            itemHtml.insertAfter(closeButton);
+        });
+      }
+
+        // add the window content
+      let windowbody = $(document.getElementById(id + '_content')); //  $('#' + id + '_content');
       windowbody.html(content);
 
-      $('#' + id).modal({
+      $(document.getElementById(id)).modal({
         backdrop: false,
         show: true
       });
 
-      $('#' + id).draggable({
+      $(document.getElementById(id)).draggable({
         cursor: "move",
         handle: ".dragable_touch"
       });
@@ -176,22 +192,40 @@
 
     // Utility function to remove window on close
     function removeWindow(id) {
-      let windowHtml = $('#' + id);
+      let windowHtml = $(document.getElementById(id))
       windowHtml.remove();
     }
 
+    function makeMenuItem(label, func) {
+        return { label: label, f: func};
+    }
 
     // Client functions for different view types
 
     // List all datasets
     async function openDatasetsListWindow() {
       let content = await do_get("/views/datasets");
-      showWindow('datasets_list_window', "Datasets", content);
+      showWindow('datasets_list_window', "Datasets", content, undefined );
     }
 
-    // Show dataset and entitites
-    function openDatasetWindow(dataset_id) {
+    // Show dataset and entities
+    async function showDatasetEntities(dataset_id) {
+        let items = [];
+        items[0] = makeMenuItem("changes", function() { showChanges(dataset_id); });
+        items[1] = makeMenuItem("table", function() { showEntityTable(dataset_id); });
 
+        let content = await do_get("/views/datasets/" + dataset_id + "/entities");
+        showWindow(dataset_id, "Dataset - " + dataset_id, content, items);
+    }
+
+    async function showEntitiesFromToken(dataset_id, token){
+        let content = await do_get("/views/datasets/" + dataset_id + "/entities?since=" + token);
+        updateWindowContent(dataset_id, content);
+    }
+
+    async function showEntitiesFromStart(dataset_id) {
+        let content = await do_get("/views/datasets/" + dataset_id + "/entities");
+        updateWindowContent(dataset_id, content);
     }
 
     // Show single entity
@@ -217,8 +251,8 @@
                 <button type="button" class="close close_btn" data-dismiss="modal" aria-label="Close" data-backdrop="static" data-keyboard="false" onclick="removeWindow('dragable_modal1')">
                     <i class="fa fa-times"></i>
                 </button>
-              </div>              
-            </div>            
+              </div>
+            </div>
           </div>
 
           <div class="modal-body p-3">

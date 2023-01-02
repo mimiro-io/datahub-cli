@@ -169,8 +169,9 @@ func (s *StdinDatasetSource) readEntities(since string, batchSize int, processEn
 }
 
 type httpDatasetSource struct {
-	Endpoint string
-	Token    string
+	Endpoint       string
+	Token          string
+	SinceParamName string
 }
 
 func (httpDatasetSource *httpDatasetSource) readEntities(since string, batchSize int, processEntities func([]*Entity) error) error {
@@ -180,8 +181,11 @@ func (httpDatasetSource *httpDatasetSource) readEntities(since string, batchSize
 		return err
 	}
 	if since != "" {
+		if httpDatasetSource.SinceParamName == "" {
+			httpDatasetSource.SinceParamName = "since"
+		}
 		q, _ := url.ParseQuery(endpoint.RawQuery)
-		q.Add("since", since)
+		q.Add(httpDatasetSource.SinceParamName, since)
 		endpoint.RawQuery = q.Encode()
 	}
 
@@ -418,7 +422,9 @@ func (s *ConsoleSink) prettyContext(context map[string]interface{}) {
 }
 
 type CollectorSink struct {
-	Entities []*Entity
+	Entities          []*Entity
+	ContinuationToken string
+	Context           *Entity
 }
 
 func (s *CollectorSink) Start() {}
@@ -429,6 +435,8 @@ func (s *CollectorSink) ProcessEntities(entities []*Entity) error {
 	for _, e := range entities {
 		if e.ID != "@continuation" && e.ID != "@context" {
 			es = append(es, e)
+		} else if e.ID == "@continuation" {
+			s.ContinuationToken = e.Properties["token"].(string)
 		}
 	}
 	s.Entities = es
@@ -512,8 +520,9 @@ func (em *EntityManager) Read(dataset string, since string, limit int, reverse b
 	}
 
 	source := &httpDatasetSource{
-		Endpoint: endpoint.String(),
-		Token:    em.token,
+		Endpoint:       endpoint.String(),
+		Token:          em.token,
+		SinceParamName: "from",
 	}
 
 	pipeline := NewPipeline(source, sink)

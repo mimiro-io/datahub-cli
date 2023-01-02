@@ -1,18 +1,11 @@
 {{define "datasets"}}
-<table class="u-full-width">
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Count</th>
-    </tr>
-    </thead>
-    <tbody>
-        {{ range . }} 
-        <tr>
-            <td><a href="#" onclick="showDataset('{{ .Id }}')">{{ .Name }}</a></td>
-            <td>0</td>
-        </tr>
-        {{ end }}
-    </tbody>
-</table>
-{{end}}
+<div>
+    {{ range . }}
+        <div class="card" style="margin-top: 10px">
+            <div class="card-body">
+                <a href="#" onclick="showDatasetEntities('{{ .Id }}')">{{ .Name }}</a>
+            </div>
+        </div>
+    {{ end }}
+</div>
+{{ end }}

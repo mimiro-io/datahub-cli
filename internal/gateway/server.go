@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"embed"
 	"io"
 	"io/fs"
@@ -48,6 +49,39 @@ func StartGateway(alias string, port string) {
 		return c.Render(http.StatusOK, "datasets", datasetItems)
 	})
 
+	e.GET("/views/datasets/:dataset/entities", func(c echo.Context) error {
+		server := web.GetServerFromAlias(alias)
+		token, _ := web.ResolveCredentialsFromAlias(alias)
+
+		dataset := c.Param("dataset")
+		since := c.QueryParam("since")
+		form := c.QueryParam("form")
+
+		// get entities list
+		em := api.NewEntityManager(server, token.AccessToken, context.Background(), api.Entities)
+		var s api.Sink
+		s = &api.SinkExpander{Sink: &api.CollectorSink{}}
+
+		em.Read(dataset, since, 2, false, s)
+
+		if form == "" {
+			form = "entities-list"
+		}
+
+		collector := s.(*api.SinkExpander).Sink.(*api.CollectorSink)
+
+		entityListView := &EntityListView{ContinuationToken: collector.ContinuationToken, DatasetId: dataset}
+		entityListView.Items = make([]EntityListItemView, 0)
+
+		for _, e := range collector.Entities {
+			// jsonData, _ := json.Marshal(e)
+			entityListView.Items = append(entityListView.Items, EntityListItemView{Id: e.ID, Deleted: e.IsDeleted})
+		}
+
+		// pass it to template
+		return c.Render(http.StatusOK, form, entityListView)
+	})
+
 	e.GET("/views/jobs", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
@@ -67,6 +101,17 @@ func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c 
 type DatasetItemView struct {
 	Id   string
 	Name string
+}
+
+type EntityListView struct {
+	Items             []EntityListItemView
+	ContinuationToken string
+	DatasetId         string
+}
+
+type EntityListItemView struct {
+	Id      string
+	Deleted bool
 }
 
 type Config struct {
