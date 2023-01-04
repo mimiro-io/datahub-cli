@@ -137,6 +137,14 @@ function RemoveProperty(entity, prefix, name){
 	}
 	delete entity["Properties"][prefix+":"+name];
 }
+
+function ConstructDeleted(entity, prefix, name, value){
+	if (entity === null || entity === undefined) {
+		return;
+	}
+	SetDeleted(entity, true)
+	AddReference(entity, prefix, name, value)
+}
 `
 
 // TestCmd allows to import a *.js (or a *.ts) file into an existing job
