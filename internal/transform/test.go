@@ -140,7 +140,7 @@ function RemoveProperty(entity, prefix, name){
 
 function NewEntityFrom(entity, addType, copyProps, copyRefs){
 	if (entity === null || entity === undefined) {
-		return;
+		return NewEntity();
 	}
 
 	let newEntity = NewEntity();
