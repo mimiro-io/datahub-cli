@@ -14,6 +14,6 @@ jobs:
       - uses: actions/add-to-project@v0.4.0
         with:
           project-url: https://github.com/orgs/mimiro-io/projects/3
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.MIMIRO_GITHUB_PROJECTS_PAT }}
           labeled: bug, feature, enhancement, docs
           label-operator: OR
