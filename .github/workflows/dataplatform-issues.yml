@@ -1,0 +1,19 @@
+name: Add bugs, features to the data platform backlog
+
+on:
+  issues:
+    types:
+      - opened
+      - labeled
+
+jobs:
+  add-to-project:
+    name: Add issue to dataplatform project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@RELEASE_VERSION
+        with:
+          project-url: https://github.com/orgs/mimiro-io/projects/3
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          labeled: bug, feature, enhancement, docs
+          label-operator: OR
