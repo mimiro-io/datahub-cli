@@ -239,7 +239,7 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 
 	qb := queries.NewQueryBuilder(server, token)
 
-	res, err := qb.QuerySingle(c.id, c.details, c.datasets)
+	res, _, err := qb.QuerySingle(c.id, c.details, c.datasets)
 	if err != nil {
 		return nil, err
 	}

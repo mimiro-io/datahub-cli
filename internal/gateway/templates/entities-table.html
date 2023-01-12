@@ -1,0 +1,32 @@
+{{ define "entities-table" }}
+<table style="width:100%">
+
+    <tr>
+        {{ range .Table.Headers }}
+            <th><a href="#" onclick="showEntity('{{ .URI }}');" alt="{{ .URI }}">{{ .Label }}</a></th>
+        {{ end }}
+    </tr>
+
+    {{ range .Table.Rows }}
+    <tr>
+        {{ range .Values }}
+            <td>
+                {{ range . }}
+                    {{ if .IsRef }}
+                        <a href="#" onclick="showEntity('{{ .URI }}')">{{ .Label }}</a>
+                    {{ else }}
+                        {{ .Value }}
+                    {{ end }}
+                {{ end }}
+            </td>
+        {{ end }}
+    </tr>
+    {{end}}
+</table>
+
+<div style="margin-top: 10px">
+    <a style="float:left;margin-left: 5px" href="#start" onclick="showTableFromStart('{{ .DatasetId }}')">Start</a>
+    <a style="float:right" href="#next" onclick="showTableFromToken('{{ .DatasetId }}', '{{ .ContinuationToken }}')">Next</a>
+</div>
+
+{{end}}

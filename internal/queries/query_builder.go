@@ -77,7 +77,7 @@ func NewQueryBuilder(server string, token string) *QueryBuilder {
 	}
 }
 
-func (qb *QueryBuilder) QuerySingle(entityId string, details bool, datasets []string) (*api.Entity, error) {
+func (qb *QueryBuilder) QuerySingle(entityId string, details bool, datasets []string) (*api.Entity, map[string]interface{}, error) {
 	q := make(map[string]interface{})
 	q["entityId"] = entityId
 	q["datasets"] = datasets
@@ -87,26 +87,30 @@ func (qb *QueryBuilder) QuerySingle(entityId string, details bool, datasets []st
 
 	content, err := json.Marshal(&q)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	res, err := web.PostRequest(qb.server, qb.token, "/query", content)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	allResults := make([]map[string]interface{}, 0)
+	err = json.Unmarshal(res, &allResults)
+	namespaces := allResults[0]["namespaces"].(map[string]interface{})
 
 	entity := make([]api.Entity, 0)
 	err = json.Unmarshal(res, &entity)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(entity) < 2 {
-		return nil, errors.New("unexpected response")
+		return nil, nil, errors.New("unexpected response")
 	}
 
-	return &entity[1], nil
+	return &entity[1], namespaces, nil
 }
 
 func (qb *QueryBuilder) Query(startingEntities []string, predicate string, inverse bool, datasets []string) (*QueryResult, error) {

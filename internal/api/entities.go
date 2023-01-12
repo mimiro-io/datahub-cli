@@ -181,9 +181,6 @@ func (httpDatasetSource *httpDatasetSource) readEntities(since string, batchSize
 		return err
 	}
 	if since != "" {
-		if httpDatasetSource.SinceParamName == "" {
-			httpDatasetSource.SinceParamName = "since"
-		}
 		q, _ := url.ParseQuery(endpoint.RawQuery)
 		q.Add(httpDatasetSource.SinceParamName, since)
 		endpoint.RawQuery = q.Encode()
@@ -519,10 +516,15 @@ func (em *EntityManager) Read(dataset string, since string, limit int, reverse b
 		return err
 	}
 
+	sinceParam := "since"
+	if em.datasetType == "entities" {
+		sinceParam = "from"
+	}
+
 	source := &httpDatasetSource{
 		Endpoint:       endpoint.String(),
 		Token:          em.token,
-		SinceParamName: "from",
+		SinceParamName: sinceParam,
 	}
 
 	pipeline := NewPipeline(source, sink)

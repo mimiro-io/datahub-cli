@@ -110,15 +110,26 @@
 
   <script type="text/javascript">
 
-      function updateWindowContent(id, content) {
+      function updateWindowContent(id, content, menuitems) {
           let windowbody = $(document.getElementById(id + '_content'));
           windowbody.html(content);
+
+          if (menuitems) {
+              let menuContainerButton = $(document.getElementById(id + "_menu_container"));
+              menuContainerButton.empty();
+
+              menuitems.forEach(x => {
+                  let itemHtml =  $(`<a href="#somethnig" style="float: right;color: #ffffff;font-size: 15px;margin-right: 10px;margin-top: 5px;">` + x.label + `</a>`);
+                  itemHtml.click(x.f);
+                  menuContainerButton.append(itemHtml);
+              });
+          }
       }
 
           // showWindow used to open a new window and show provided contents
     function showWindow(id, title, content, menuitems) {
 
-        let existingWindow = $(document.getElementById(id)); // $('#' + id);
+      let existingWindow = $(document.getElementById(id)); // $('#' + id);
 
       // dont add the window if already there
       if (existingWindow.length != 0) {
@@ -141,6 +152,8 @@
                 <button id="${id}_close_button" style="float: right" type="button" class="close close_btn" data-dismiss="modal" aria-label="Close" data-backdrop="static" data-keyboard="false" onclick="removeWindow('${id}')"">
                     <i class="fa fa-times"></i>
                 </button>
+                <span id="${id}_menu_container">
+                </span>
               </div>
             </div>
           </div>
@@ -155,11 +168,13 @@
       body.append(window_html);
 
       if (menuitems) {
-          let closeButton = $(document.getElementById(id + "_close_button"));
-        menuitems.forEach(x => {
+          let menuContainerButton = $(document.getElementById(id + "_menu_container"));
+          menuContainerButton.empty();
+
+          menuitems.forEach(x => {
             let itemHtml =  $(`<a href="#somethnig" style="float: right;color: #ffffff;font-size: 15px;margin-right: 10px;margin-top: 5px;">` + x.label + `</a>`);
             itemHtml.click(x.f);
-            itemHtml.insertAfter(closeButton);
+            menuContainerButton.append(itemHtml);
         });
       }
 
@@ -218,19 +233,57 @@
         showWindow(dataset_id, "Dataset - " + dataset_id, content, items);
     }
 
+    async function showChanges(dataset_id) {
+        let items = [];
+        items[0] = makeMenuItem("entities", function() { showEntitiesFromStart(dataset_id); });
+        items[1] = makeMenuItem("table", function() { showEntityTable(dataset_id); });
+
+        let content = await do_get("/views/datasets/" + dataset_id + "/changes");
+        updateWindowContent(dataset_id, content, items);
+    }
+
+      async function showChangesFromToken(dataset_id, token){
+          let content = await do_get("/views/datasets/" + dataset_id + "/changes?since=" + token);
+          updateWindowContent(dataset_id, content);
+      }
+
+      async function showEntityTable(dataset_id) {
+        let items = [];
+        items[0] = makeMenuItem("changes", function() { showChanges(dataset_id); });
+        items[1] = makeMenuItem("entities", function() { showEntitiesFromStart(dataset_id); });
+
+        let content = await do_get("/views/datasets/" + dataset_id + "/entities?form=table");
+        updateWindowContent(dataset_id, content, items);
+    }
+
     async function showEntitiesFromToken(dataset_id, token){
         let content = await do_get("/views/datasets/" + dataset_id + "/entities?since=" + token);
         updateWindowContent(dataset_id, content);
     }
 
     async function showEntitiesFromStart(dataset_id) {
+        let items = [];
+        items[0] = makeMenuItem("changes", function() { showChanges(dataset_id); });
+        items[1] = makeMenuItem("table", function() { showEntityTable(dataset_id); });
+
         let content = await do_get("/views/datasets/" + dataset_id + "/entities");
+        updateWindowContent(dataset_id, content, items);
+    }
+
+    async function showTableFromToken(dataset_id, token){
+        let content = await do_get("/views/datasets/" + dataset_id + "/entities?form=table&since=" + token);
         updateWindowContent(dataset_id, content);
     }
 
-    // Show single entity
-    function openEntityWindow(entity_id) {
+    async function showTableFromStart(dataset_id) {
+        let content = await do_get("/views/datasets/" + dataset_id + "/entities?form=table");
+        updateWindowContent(dataset_id, content);
+    }
 
+      // Show single entity
+    async function showEntity(entity_id) {
+        let content = await do_get("/views/entity?id=" + entity_id);
+        showWindow(entity_id, "Entity - " + entity_id, content, null);
     }
 
     function showRelatedEntityList(entity_id, relationship, inverse) {

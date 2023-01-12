@@ -12,5 +12,5 @@ import (
 func TestGateway(t *testing.T) {
 	c := gateway.Catalog{}
 	fmt.Println(c)
-	// gateway.StartGateway("local", "8242")
+	// 	gateway.StartGateway("local", "8242")
 }

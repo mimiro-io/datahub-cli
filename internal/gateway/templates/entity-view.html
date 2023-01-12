@@ -1,0 +1,27 @@
+{{ define "entity-view" }}
+<table style="width:100%">
+
+    {{ range .EntityTable.Rows }}
+    <tr>
+        <td>
+            {{$header := (index (index .Values 0) 0)}}
+            {{ if $header.IsRef }}
+                <a href="#" onclick="showEntity('{{ $header.URI }}')">{{ $header.Label }}</a>
+            {{ else }}
+                {{ $header.Value }}
+            {{ end }}
+        </td>
+        <td>
+            {{ range (index .Values 1) }}
+                {{ if .IsRef }}
+                    <a href="#" onclick="showEntity('{{ .URI }}')">{{ .Label }}</a>
+                {{ else }}
+                    {{ .Value }}
+                {{ end }}
+            {{ end }}
+        </td>
+    </tr>
+    {{end}}
+</table>
+
+{{end}}
