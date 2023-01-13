@@ -292,68 +292,13 @@
 
     // still to tidy below here
 
-    function openJobsListWindow() {
-      let win_html = `
-<div class="modal fade cmodal" id="dragable_modal1" tabindex="-1" role="dialog" aria-labelledby="alabel" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header w-100" style="background-color: black">
-            <div class="row m-0 w-100">
-              <div class="col-md-12 px-4 p-2 dragable_touch d-block">
-                <h3 class="m-0 d-inline">Jobs</h3>
-                <button type="button" class="close close_btn" data-dismiss="modal" aria-label="Close" data-backdrop="static" data-keyboard="false" onclick="removeWindow('dragable_modal1')">
-                    <i class="fa fa-times"></i>
-                </button>
-              </div>
-            </div>
-          </div>
+    async function openJobsListWindow() {
+      let content = await do_get("/views/jobs");
+      showWindow('jobs_list_window', "Jobs", content);
 
-          <div class="modal-body p-3">
-            <table class="u-full-width">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Url</th>
-                    <th>Is Running</th>
-                    <th>Last Run At</th>
-                    <th>Last Run Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><a href="job.html">core.ImportPeople</a></td>
-                        <td>http://local.io/datahub/api/jobs/core.ImportPeople</td>
-                        <td>False</td>
-                        <td>24:03:2022T12:00:00</td>
-                        <td>Success</td>
-                      </tr>
-                      <tr>
-                        <td><a href="job.html">core.ImportCompanies</a></td>
-                        <td>http://local.io/datahub/api/jobs/core.ImportPeople</td>
-                        <td>False</td>
-                        <td>24:03:2022T12:00:00</td>
-                        <td>Success</td>
-                      </tr>
-                  </tbody>
-              </table>
-          </div>
-        </div>
-      </div>
-    </div>
-`;
+    }
 
-      let body = $('#main_content');
-      body.append(win_html);
-
-      $('#dragable_modal1').modal({
-        backdrop: false,
-        show: true
-      });
-
-      $('.modal-dialog').draggable({
-        cursor: "move",
-        handle: ".dragable_touch"
-      });
+    function openJobWindow(job_title) {
 
     }
 
