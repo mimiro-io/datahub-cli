@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -18,18 +19,18 @@ import (
 )
 
 //go:embed static templates
-var embededFiles embed.FS
+var embeddedFiles embed.FS
 
 func StartGateway(alias string, port string) {
 	e := echo.New()
 	e.HideBanner = true
 
 	renderer := &TemplateRenderer{
-		templates: template.Must(template.ParseFS(embededFiles, "templates/*.html")),
+		templates: template.Must(template.ParseFS(embeddedFiles, "templates/*.html")),
 	}
 	e.Renderer = renderer
 
-	fsys, _ := fs.Sub(embededFiles, "static")
+	fsys, _ := fs.Sub(embeddedFiles, "static")
 	assetHandler := http.FileServer(http.FS(fsys))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
 
@@ -138,10 +139,22 @@ func StartGateway(alias string, port string) {
 	})
 
 	e.GET("/views/jobs", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+		server := web.GetServerFromAlias(alias)
+		token, _ := web.ResolveCredentialsFromAlias(alias)
 
+		jm := api.NewJobManager(server, token.AccessToken)
+
+		jobs := jm.GetJobListWithHistory()
+
+		sort.Slice(jobs, func(i, j int) bool {
+			return jobs[i].Job.Title < jobs[j].Job.Title
+		})
+
+		return c.Render(http.StatusOK, "jobs", jobs)
+	})
+	e.Debug = true
 	e.Logger.Fatal(e.Start(":" + port))
+
 }
 
 func buildEntityTableView(entity *api.Entity, namespaces map[string]interface{}) *EntityTableView {

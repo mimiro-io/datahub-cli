@@ -64,6 +64,17 @@ type JobOutput struct {
 	History *JobHistory
 }
 
+type JobOutputViewItem struct {
+	Job         Job          `json:"job"`
+	History     *JobHistory  `json:"history"`
+	HistoryView *HistoryView `json:"historyView"`
+}
+
+type HistoryView struct {
+	LastRun      string
+	LastDuration string
+}
+
 type JobManager struct {
 	server string
 	token  string
@@ -165,7 +176,7 @@ func (jm *JobManager) GetJobStatus(jobId string) ([]JobStatus, error) {
 	return jobs, nil
 }
 
-func (jm *JobManager) GetJobHistory(id string) (JobHistory, error) {
+func (jm *JobManager) GetJobHistories() []JobHistory {
 
 	body, err := web.GetRequest(jm.server, jm.token, "/jobs/_/history")
 	utils.HandleError(err)
@@ -173,6 +184,12 @@ func (jm *JobManager) GetJobHistory(id string) (JobHistory, error) {
 	histories := make([]JobHistory, 0)
 	err = json.Unmarshal(body, &histories)
 	utils.HandleError(err)
+
+	return histories
+}
+
+func (jm *JobManager) GetJobHistoryForId(id string) (JobHistory, error) {
+	histories := jm.GetJobHistories()
 
 	for _, hist := range histories {
 		if hist.Id == id {
@@ -204,17 +221,58 @@ func GetJobsCompletion(pattern string) []string {
 }
 
 func (jm *JobManager) ResolveId(title string) string {
-	allJobs, err := web.GetRequest(jm.server, jm.token, "/jobs")
-	utils.HandleError(err)
+	jobList := jm.GetJobs()
 
-	joblist := make([]Job, 0)
-	err = json.Unmarshal(allJobs, &joblist)
-	utils.HandleError(err)
-
-	for _, job := range joblist {
+	for _, job := range jobList {
 		if job.Title == title {
 			return job.Id
 		}
 	}
 	return title
+}
+
+func (jm *JobManager) GetJobs() []Job {
+	allJobs, err := web.GetRequest(jm.server, jm.token, "/jobs")
+	utils.HandleError(err)
+
+	jobList := make([]Job, 0)
+	err = json.Unmarshal(allJobs, &jobList)
+	utils.HandleError(err)
+
+	return jobList
+}
+
+func (jm *JobManager) GetJobListWithHistory() []JobOutputViewItem {
+	histories := jm.GetJobHistories()
+	jobs := jm.GetJobs()
+
+	historyMap := make(map[string]JobHistory)
+	for _, jh := range histories {
+		historyMap[jh.Id] = jh
+	}
+
+	output := make([]JobOutputViewItem, 0)
+	for _, job := range jobs {
+		out := JobOutputViewItem{
+			Job: job,
+		}
+		if h, ok := historyMap[job.Id]; ok {
+			out.History = &h
+		}
+		if h, ok := historyMap[job.Id+"_temp"]; ok {
+			if out.History == nil || h.Start.After(out.History.Start) {
+				out.History = &h
+			}
+		}
+		if out.History != nil {
+			timed := out.History.End.Sub(out.History.Start)
+			hv := HistoryView{
+				LastDuration: fmt.Sprintf("%s", timed),
+				LastRun:      out.History.Start.Format(time.RFC3339),
+			}
+			out.HistoryView = &hv
+		}
+		output = append(output, out)
+	}
+	return output
 }
