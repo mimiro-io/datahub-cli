@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/mimiro-io/datahub-cli/internal/api"
@@ -110,21 +111,32 @@ func StartGateway(alias string, port string) {
 		var s api.Sink
 		s = &api.SinkExpander{Sink: &api.CollectorSink{}}
 
-		em.Read(dataset, since, 2, false, s)
+		em.Read(dataset, since, 10, false, s)
 
 		if form == "" {
 			form = "list"
 		}
 
+		type EntityDetails struct {
+			Entity       *api.Entity
+			IsoTimestamp string
+		}
+
 		collector := s.(*api.SinkExpander).Sink.(*api.CollectorSink)
+		var enhancedEntities []EntityDetails
+		for _, entity := range collector.Entities {
+			newTimestamp := time.Unix(0, int64(entity.Recorded)).Format(time.RFC3339)
+			newEntity := EntityDetails{entity, newTimestamp}
+			enhancedEntities = append(enhancedEntities, newEntity)
+		}
 
 		if form == "list" {
 			entityListView := &EntityListView{ContinuationToken: collector.ContinuationToken, DatasetId: dataset}
 			entityListView.Items = make([]EntityListItemView, 0)
 
-			for _, e := range collector.Entities {
+			for _, e := range enhancedEntities {
 				// jsonData, _ := json.Marshal(e)
-				entityListView.Items = append(entityListView.Items, EntityListItemView{Id: e.ID, Deleted: e.IsDeleted})
+				entityListView.Items = append(entityListView.Items, EntityListItemView{Id: e.Entity.ID, Deleted: e.Entity.IsDeleted, Recorded: e.IsoTimestamp})
 			}
 
 			// pass it to template
@@ -403,8 +415,9 @@ type EntityListView struct {
 }
 
 type EntityListItemView struct {
-	Id      string
-	Deleted bool
+	Id       string
+	Deleted  bool
+	Recorded string
 }
 
 type Config struct {
