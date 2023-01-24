@@ -90,7 +90,7 @@ mim query --entity <entityURI> --via <predicateURI> --inverse true | false
 					pr = &printer.ExpandingPrinter{Printer: pr}
 				}
 				pr.Header(result[0])
-				pr.Print(result[1 : len(result)-1])
+				pr.Print(result[1:])
 				pr.Footer()
 			}
 
@@ -140,6 +140,7 @@ type term struct {
 }
 
 func (t *term) Print(entities []interface{}) {
+
 	out := make([][]string, 0)
 	if !t.header {
 		out = append(out, []string{"Uri", "PredicateUri", "Id", "Recorded", "Deleted", "Props", "Refs"})
@@ -250,7 +251,6 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 	return out, nil
 }
 
-// queryEntities should return a list of [@context, [id, predicate, Entity]]
 func queryEntities(c cmds, server string, token string) ([]interface{}, error) {
 	eq := api.NewEntityQuery(server, token)
 
