@@ -1,0 +1,19 @@
+{{define "entities-list"}}
+
+<div>
+    {{ range .Items }}
+        <div class="card" style="margin-top: 5px">
+            <div class="card-body">
+                <div><a href="#" onclick="showEntity('{{ .Id }}')">{{ .Id }}</a> <small>{{ .Recorded }}</small></div>
+            </div>
+        </div>
+    {{ end }}
+</div>
+
+<div style="margin-top: 10px">
+    <a style="float:left;margin-left: 5px" href="#start" onclick="showEntitiesFromStart('{{ .DatasetId }}')">Start</a>
+    <a style="float:right" href="#next" onclick="showEntitiesFromToken('{{ .DatasetId }}', '{{ .ContinuationToken }}')">Next</a>
+</div>
+{{end}}
+
+

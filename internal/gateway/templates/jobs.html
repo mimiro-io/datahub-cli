@@ -1,0 +1,34 @@
+{{define "jobs"}}
+<table class="u-full-width">
+    <thead>
+    <tr>
+        <th></th>
+        <th>Title</th>
+        <th>Paused</th>
+        <th>Tags</th>
+        <th>Source</th>
+        <th>Transform</th>
+        <th>Sink</th>
+        <th>Last Run</th>
+        <th>Last Duration</th>
+        <th>Error</th>
+    </tr>
+    </thead>
+    <tbody>
+        {{ range . }}
+        <tr>
+            <td><input type="checkbox" id="select_{{ .Job.Title }}"></td>
+            <td><a href="#" onclick="openJobWindow('{{ .Job.Title }}')">{{ .Job.Title }}</a></td>
+            <td>{{ .Job.Paused }}</td>
+            <td>{{ .Job.Tags }}</td>
+            <td>{{ if not .Job.Source.Name }}{{ .Job.Sink.Url }}{{else}}{{ .Job.Source.Name }}{{end}}</td>
+            <td>{{ .Job.Transform.Type }}</td>
+            <td>{{ if not .Job.Sink.Name }}{{ .Job.Sink.Url }}{{else}}{{ .Job.Sink.Name }}{{end}}</td>
+            <td>{{if not .HistoryView}}{{else}}{{ .HistoryView.LastRun }}{{end}}</td>
+            <td>{{if not .HistoryView}}{{else}}{{ .HistoryView.LastDuration }}{{end}}</td>
+            <td>{{if not .History}}{{else}}{{ .History.LastError }}{{end}}</td>
+        </tr>
+        {{ end }}
+    </tbody>
+</table>
+{{end}}

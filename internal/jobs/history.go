@@ -60,7 +60,7 @@ var HistoryCmd = &cobra.Command{
 
 		pterm.DefaultSection.Printf("Get history of job with id: " + id + " (" + idOrTitle + ") on " + server)
 
-		hist, err := jm.GetJobHistory(id)
+		hist, err := jm.GetJobHistoryForId(id)
 		utils.HandleError(err)
 
 		renderHistory(hist, format)

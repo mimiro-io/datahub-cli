@@ -16,12 +16,12 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"sort"
 	"strings"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 )
 
 type Dataset struct {
@@ -43,13 +43,15 @@ func NewDatasetManager(server string, token string) *DatasetManager {
 }
 
 func (dm *DatasetManager) List() ([]Dataset, error) {
-	client, err := web.NewClient(dm.server)
+	datasets := make([]Dataset, 0)
+	data, err := web.GetRequest(dm.server, dm.token, "/datasets")
 	if err != nil {
 		return nil, err
-	}
-	datasets := make([]Dataset, 0)
-	if err := client.Get("/datasets", &datasets); err != nil {
-		return nil, err
+	} else {
+		err = json.Unmarshal(data, &datasets)
+		if err != nil {
+			return nil, err
+		}
 	}
 	sort.Slice(datasets, func(i, j int) bool {
 		return datasets[i].Name < datasets[j].Name

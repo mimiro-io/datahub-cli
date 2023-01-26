@@ -1,0 +1,11 @@
+{{define "datasets"}}
+<div>
+    {{ range . }}
+        <div class="card" style="margin-top: 10px">
+            <div class="card-body">
+                <a href="#" onclick="showDatasetEntities('{{ .Id }}')">{{ .Name }}</a>
+            </div>
+        </div>
+    {{ end }}
+</div>
+{{ end }}

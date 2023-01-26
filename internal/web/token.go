@@ -22,21 +22,26 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"os"
+	"time"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/pkg/errors"
 	"github.com/rotisserie/eris"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"time"
 )
 
 func GetServer() string {
 	alias := viper.GetString("activelogin")
+	return GetServerFromAlias(alias)
+}
+
+func GetServerFromAlias(alias string) string {
 	if alias != "" {
 		if p, err := getLoginAlias(alias); err != nil {
 			return ""
@@ -49,8 +54,7 @@ func GetServer() string {
 	}
 }
 
-func ResolveCredentials() (*config.SignedToken, error) {
-	alias := viper.GetString("activelogin")
+func ResolveCredentialsFromAlias(alias string) (*config.SignedToken, error) {
 	if alias != "" {
 		cfg, err := getLoginAlias(alias)
 		if err != nil {
@@ -93,13 +97,23 @@ func ResolveCredentials() (*config.SignedToken, error) {
 			cfg.SignedToken = tkn
 			_ = config.Store(alias, cfg)
 			return tkn, nil
-		default:
+		case "unsecured":
+			// this can be improved.
 			return &config.SignedToken{AccessToken: cfg.Token}, nil
+		case "token":
+			return &config.SignedToken{AccessToken: cfg.Token}, nil
+		default:
+			return nil, errors.New("unrecognised auth type")
 		}
 	}
 
 	token := viper.GetString("token")
 	return &config.SignedToken{AccessToken: token}, nil
+}
+
+func ResolveCredentials() (*config.SignedToken, error) {
+	alias := viper.GetString("activelogin")
+	return ResolveCredentialsFromAlias(alias)
 }
 
 func createJWTForTokenRequest(subject string, audience string, privateKey *rsa.PrivateKey) (string, error) {
