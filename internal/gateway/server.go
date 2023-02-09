@@ -355,6 +355,10 @@ func makeValue(raw interface{}, isRef bool, valueFunc func(string) string) []*Va
 				multiValue = append(multiValue, val)
 			}
 		}
+	case []interface{}:
+		for _, v1 := range v {
+			multiValue = makeValue(v1, false, nil)
+		}
 	default:
 		val := &Value{Value: "unknown type", IsRef: false}
 		multiValue = append(multiValue, val)
