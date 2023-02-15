@@ -14,7 +14,7 @@
         <td>
             {{ range (index .Values 1) }}
                 {{ if .IsRef }}
-                    <a href="#" onclick="showEntity('{{ .URI }}')">{{ .Label }}</a>
+                    <a href="#" onclick="showEntity('{{ .URI }}')" title="{{ .URI }}">{{ .Label }}</a>
                 {{ else }}
                     {{ .Value }}
                 {{ end }}
