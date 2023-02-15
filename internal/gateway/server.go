@@ -382,6 +382,9 @@ func makeValue(raw interface{}, isRef bool, valueFunc func(string) string) []*Va
 	case nil:
 		val := &Value{Value: "nil", IsRef: false}
 		multiValue = append(multiValue, val)
+	case bool:
+		val := &Value{Value: fmt.Sprintf("%t", v), IsRef: false}
+		multiValue = append(multiValue, val)
 	default:
 		val := &Value{Value: "unknown type", IsRef: false}
 		multiValue = append(multiValue, val)
