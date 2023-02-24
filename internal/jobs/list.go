@@ -455,6 +455,6 @@ func listJobs(jobs []byte, history []byte) ([]api.JobOutput, error) {
 
 func init() {
 	ListCmd.PersistentFlags().Bool("verbose", false, "Verbose output of jobs list")
-	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar' or 'title=foo,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
+	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar*' or 'title=fo*o,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
 	ListCmd.PersistentFlags().StringP("filterMode", "", "exclusive", "Filter mode used by the filter flag. Default is exclusive meaning only results matching all filters will be returned. Use 'inclusive' to return all results matching one or more filters")
 }
