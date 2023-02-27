@@ -56,6 +56,14 @@ func NewContext() *Entity {
 	return e
 }
 
+func NewContextWithNamespaces(namespaces map[string]interface{}) *Entity {
+	e := NewEntity("@context")
+	e.Properties["id"] = "@context"
+	e.Properties["namespaces"] = namespaces
+
+	return e
+}
+
 func NewEntityFromMap(data map[string]interface{}) *Entity {
 	e := Entity{}
 	e.ID = data["id"].(string)

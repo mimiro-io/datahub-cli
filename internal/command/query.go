@@ -17,9 +17,8 @@ package command
 import (
 	"context"
 	"fmt"
-	"os"
-
 	"github.com/mimiro-io/datahub-cli/internal/docs"
+	"os"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/datasets/printer"
@@ -31,15 +30,16 @@ import (
 )
 
 type cmds struct {
-	id       string
-	entity   []string
-	via      string
-	inverse  bool
-	json     bool
-	pretty   bool
-	expanded bool
-	datasets []string
-	details  bool
+	id         string
+	entity     []string
+	via        string
+	inverse    bool
+	json       bool
+	pretty     bool
+	expanded   bool
+	datasets   []string
+	details    bool
+	namespaces bool
 }
 
 // describeCmd represents the describe command
@@ -232,6 +232,7 @@ func resolveCmds(cmd *cobra.Command, args []string) cmds {
 	c.datasets, _ = cmd.Flags().GetStringArray("datasets")
 	c.expanded, _ = cmd.Flags().GetBool("expanded")
 	c.details, _ = cmd.Flags().GetBool("details")
+	c.namespaces, _ = cmd.Flags().GetBool("namespaces")
 	return c
 }
 
@@ -240,12 +241,17 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 
 	qb := queries.NewQueryBuilder(server, token)
 
-	res, _, err := qb.QuerySingle(c.id, c.details, c.datasets)
+	res, namespaces, err := qb.QuerySingle(c.id, c.details, c.datasets)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]*api.Entity, 0)
-	out = append(out, api.NewContext())
+	if c.namespaces{
+		out = append(out, api.NewContextWithNamespaces(namespaces))
+	} else {
+		out = append(out, api.NewContext())
+	}
+
 	out = append(out, res)
 
 	return out, nil
@@ -266,6 +272,7 @@ func init() {
 	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "add a list of datasets to filter in with '<dataset-name>, <dataset-name>'")
 	QueryCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 	QueryCmd.Flags().Bool("details", false, "Works only with --id/-i query. Inject entity details into entity result.")
+	QueryCmd.Flags().Bool("namespaces", false, "Works only with --id/-i query. Add context with namespaces.")
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
