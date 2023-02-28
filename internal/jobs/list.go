@@ -101,7 +101,7 @@ type jobFilter struct {
 
 func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) ([]api.JobOutput, error) {
 
-	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:@+ ]+[,]?)+);?")
+	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:@*+ ]+[,]?)+);?")
 	matches := pattern.FindAllStringSubmatch(filters, -1)
 	var sortedFilters []jobFilter
 
@@ -228,11 +228,33 @@ func processFilter(jobList []api.JobOutput, filter jobFilter) []api.JobOutput {
 
 func matchProperty(property string, patterns []string) bool {
 	for _, pattern := range patterns {
-		if strings.Contains(strings.ToLower(property), strings.ToLower(pattern)) {
+
+		match, _ := regexp.MatchString(convertFilter(pattern), property)
+		if match {
 			return true
 		}
 	}
 	return false
+}
+
+func convertFilter(pattern string) string {
+	var output strings.Builder
+	if !strings.HasPrefix(pattern, "*") {
+		output.WriteString("^")
+	}
+
+	for i, literal := range strings.Split(pattern, "*") {
+		// Replace * with .*
+		if i > 0 {
+			output.WriteString(".*")
+		}
+		output.WriteString(regexp.QuoteMeta(literal))
+	}
+	if !strings.HasSuffix(pattern, "*") {
+		output.WriteString("$")
+	}
+
+	return output.String()
 }
 
 func appendJobOutput(outputArray []api.JobOutput, output api.JobOutput) []api.JobOutput {
@@ -298,8 +320,8 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 			lastError = row.History.LastError
 			lastError = strings.ReplaceAll(lastError, "\r\n", " ")
 			lastError = strings.ReplaceAll(lastError, "\n", " ")
-			if len(lastError) > 30 {
-				lastError = lastError[:30] + "..."
+			if len(lastError) > 32 {
+				lastError = lastError[:32] + "..."
 			}
 		}
 
@@ -433,6 +455,6 @@ func listJobs(jobs []byte, history []byte) ([]api.JobOutput, error) {
 
 func init() {
 	ListCmd.PersistentFlags().Bool("verbose", false, "Verbose output of jobs list")
-	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar' or 'title=foo,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
+	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar*' or 'title=fo*o,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
 	ListCmd.PersistentFlags().StringP("filterMode", "", "exclusive", "Filter mode used by the filter flag. Default is exclusive meaning only results matching all filters will be returned. Use 'inclusive' to return all results matching one or more filters")
 }
