@@ -64,6 +64,9 @@ to quickly create a Cobra application.`,
 		since, err := cmd.Flags().GetString("since")
 		utils.HandleError(err)
 
+		wait, err := cmd.Flags().GetBool("wait")
+		utils.HandleError(err)
+
 		jm := api.NewJobManager(server, token)
 		id := jm.ResolveId(idOrTitle)
 
@@ -96,8 +99,10 @@ to quickly create a Cobra application.`,
 			}
 
 			// follow the job
-			err = followJob(runningId, *jm)
-			utils.HandleError(err)
+			if wait {
+				err = followJob(runningId, *jm)
+				utils.HandleError(err)
+			}
 		} else if operation == "pause" {
 			_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/pause", id))
 			utils.HandleError(err)
@@ -196,6 +201,7 @@ func init() {
 	OperateCmd.Flags().StringP("id", "i", "", "The jobid name of the job you want to get operate on")
 	OperateCmd.Flags().StringP("since", "s", "", "The since token to reset to, if resetting or running")
 	OperateCmd.Flags().StringP("jobType", "t", "", "jobType for operation run: fullsync or incremental")
+	OperateCmd.Flags().BoolP("wait", "w", false, "Use together with run operation to wait for the job to finish")
 	OperateCmd.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"run", "stop", "pause", "resume", "kill", "reset"}, cobra.ShellCompDirectiveDefault
 	})
