@@ -134,10 +134,11 @@ func processFilter(jobList []api.JobOutput, filter jobFilter) []api.JobOutput {
 	var output []api.JobOutput
 	for _, jobOutput := range jobList {
 		switch filter.jobProperty {
-		case "id", "title":
+		case "id":
 			if matchProperty(jobOutput.Job.Id, filter.pattern) {
 				output = appendJobOutput(output, jobOutput)
 			}
+		case "title":
 			if matchProperty(jobOutput.Job.Title, filter.pattern) {
 				output = appendJobOutput(output, jobOutput)
 			}
