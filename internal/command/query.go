@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"os"
+	"strings"
 
 	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/datasets/printer"
@@ -246,7 +247,7 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 		return nil, err
 	}
 	out := make([]*api.Entity, 0)
-	if c.namespaces{
+	if c.namespaces {
 		out = append(out, api.NewContextWithNamespaces(namespaces))
 	} else {
 		out = append(out, api.NewContext())
@@ -273,6 +274,23 @@ func init() {
 	QueryCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 	QueryCmd.Flags().Bool("details", false, "Works only with --id/-i query. Inject entity details into entity result.")
 	QueryCmd.Flags().Bool("namespaces", false, "Works only with --id/-i query. Add context with namespaces.")
+
+	QueryCmd.RegisterFlagCompletionFunc("datasets", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		parts := strings.Split(toComplete, ",")
+		if len(parts) > 1 {
+			pattern := parts[len(parts)-1]
+			result := api.GetDatasetsCompletion(pattern)
+			var values []string
+			for _, res := range result {
+				values = append(values, strings.TrimSuffix(toComplete, pattern)+res)
+			}
+			return values, cobra.ShellCompDirectiveNoFileComp
+		}
+		return api.GetDatasetsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+	})
 
 	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
 		pterm.Println()
