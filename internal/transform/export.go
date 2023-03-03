@@ -68,6 +68,12 @@ mim transform export <my-job> > out.js
 		pterm.Println()
 	},
 	TraverseChildren: true,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return api.GetJobsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 
 func output(job *api.Job) {
