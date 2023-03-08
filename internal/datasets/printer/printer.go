@@ -15,7 +15,7 @@
 package printer
 
 import (
-	"github.com/mimiro-io/datahub-cli/internal/api"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 )
 
 type Printer interface {

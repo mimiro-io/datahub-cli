@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/docs"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"os"
 	"strings"
 
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/datasets/printer"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/queries"

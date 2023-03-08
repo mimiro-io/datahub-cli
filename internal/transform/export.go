@@ -18,9 +18,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"strings"
 
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"

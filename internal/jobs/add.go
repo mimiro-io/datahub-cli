@@ -16,10 +16,10 @@ package jobs
 
 import (
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/transform"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"os"
@@ -68,7 +68,7 @@ to quickly create a Cobra application.`,
 		if tfile != "" {
 			var code []byte
 			importer := transform.NewImporter(tfile)
-			if filepath.Ext(tfile) == ".ts"{
+			if filepath.Ext(tfile) == ".ts" {
 				code, err = importer.ImportTs()
 			} else {
 				code, err = importer.ImportJs()
@@ -76,7 +76,7 @@ to quickly create a Cobra application.`,
 			utils.HandleError(err)
 
 			job, err = jobManager.AddTransform(job, importer.Encode(code))
-			if (err != nil){
+			if err != nil {
 				pterm.Error.Println(fmt.Sprintf("Could not add Transform to job. Response from datahub was: %s", err))
 				pterm.Println()
 				os.Exit(1)

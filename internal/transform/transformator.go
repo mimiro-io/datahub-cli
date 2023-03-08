@@ -16,12 +16,11 @@ package transform
 
 import (
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"strconv"
 	"strings"
 
 	"github.com/gofrs/uuid"
-
-	"github.com/mimiro-io/datahub-cli/internal/api"
 
 	"github.com/pterm/pterm"
 

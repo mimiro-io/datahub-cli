@@ -18,11 +18,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"net/url"
 
 	"github.com/mimiro-io/datahub-cli/internal/web"
-
-	"github.com/mimiro-io/datahub-cli/internal/api"
 )
 
 type QueryResult struct {

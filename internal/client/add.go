@@ -1,9 +1,9 @@
 package client
 
 import (
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
