@@ -16,62 +16,29 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/golang-jwt/jwt"
 	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/rotisserie/eris"
 	"github.com/spf13/cobra"
 	bolt "go.etcd.io/bbolt"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 	"os"
 	"time"
 )
 
 var ErrValueNotFound = eris.New("value not found for key")
 
-type SignedToken struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	Scope        string `json:"scope,omitempty"`
-	ExpiresIn    int64  `json:"expires_in,omitempty"`
-	TokenType    string `json:"token_type"`
-}
-
-func (tkn *SignedToken) isValid() bool {
-	// we dont care about token validity, we only care about the time
-	parser := jwt.Parser{
-		SkipClaimsValidation: true,
-	}
-	claims := &jwt.StandardClaims{}
-
-	_, _, err := parser.ParseUnverified(tkn.AccessToken, claims)
-	if err != nil {
-		return false
-	}
-	return claims.VerifyExpiresAt(claims.ExpiresAt, true)
-}
-
-func (tkn *SignedToken) Unpack() (*jwt.StandardClaims, error) {
-	// we dont care about token validity, we only care about the time
-	parser := jwt.Parser{
-		SkipClaimsValidation: true,
-	}
-	claims := &jwt.StandardClaims{}
-
-	_, _, err := parser.ParseUnverified(tkn.AccessToken, claims)
-	if err != nil {
-		return nil, err
-	}
-	return claims, nil
-}
-
 type Config struct {
-	Server       string       `json:"server"`
-	Token        string       `json:"token"`
-	ClientId     string       `json:"client_id"`
-	ClientSecret string       `json:"client_secret"`
-	Authorizer   string       `json:"authorizer"`
-	Audience     string       `json:"audience"`
-	Type         string       `json:"type"`
-	SignedToken  *SignedToken `json:"signed_token"`
+	Server                  string                    `json:"server"`
+	ClientId                string                    `json:"client_id"`
+	ClientSecret            string                    `json:"client_secret"`
+	Authorizer              string                    `json:"authorizer"`
+	Audience                string                    `json:"audience"`
+	Type                    string                    `json:"type"`
+	Token                   string                    `json:"token"`
+	OauthToken              *oauth2.Token             `json:"oauth_token"`
+	OauthConfig             *oauth2.Config            `json:"oauth_config"`
+	ClientCredentialsConfig *clientcredentials.Config `json:"cc_config"`
 }
 
 const bucket = "logins"

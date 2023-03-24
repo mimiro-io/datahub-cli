@@ -15,13 +15,19 @@
 package login
 
 import (
+	"context"
+	_ "embed"
 	"fmt"
+	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/google/uuid"
 	"github.com/mimiro-io/datahub-cli/internal/config"
-	"github.com/mimiro-io/datahub-cli/internal/web"
+	pkce "github.com/nirasan/go-oauth-pkce-code-verifier"
+	"github.com/rotisserie/eris"
 	"github.com/skratchdot/open-golang/open"
+	"golang.org/x/oauth2"
+	"io"
 	"net"
 	"net/http"
-	"net/url"
 )
 
 type UserLogin struct {
@@ -32,40 +38,65 @@ type AuthCode struct {
 	ClientId string `json:"clientId"`
 }
 
+//go:embed success.html
+var successHtml string
+
 func NewUserLogin() *UserLogin {
 	return &UserLogin{}
 }
 
-func (l *UserLogin) Login(targetUrl string) (*config.SignedToken, error) {
-	var code *AuthCode
+func (l *UserLogin) Login(cfg *config.Config) (*oauth2.Token, error) {
+	var code string
 
-	tokenChannel := make(chan *AuthCode)
+	codeChannel := make(chan string)
 	errorChannel := make(chan error)
 	portChannel := make(chan string)
 
-	go listenForTokenCallback(tokenChannel, errorChannel, portChannel, targetUrl)
-
+	go listenForTokenCallback(codeChannel, errorChannel, portChannel, cfg.Authorizer)
 	port := <-portChannel
 
-	u, err := url.Parse(fmt.Sprintf("%s/login", targetUrl))
+	if cfg.ClientId == "" {
+		return nil, eris.New("Login missing configured clientId")
+	}
+
+	ctx := oidc.InsecureIssuerURLContext(context.Background(), cfg.Authorizer)
+	provider, err := oidc.NewProvider(ctx, cfg.Authorizer)
 	if err != nil {
 		return nil, err
 	}
-	q, _ := url.ParseQuery("")
-	q.Add("redirect_uri", fmt.Sprintf("http://localhost:%v/callback", port))
-	u.RawQuery = q.Encode()
+
+	oauthCfg := &oauth2.Config{
+		ClientID:    cfg.ClientId,
+		RedirectURL: fmt.Sprintf("http://localhost:%v/callback", port),
+		Endpoint:    provider.Endpoint(),
+		Scopes:      []string{"openid", "offline"},
+	}
+
+	v, err := pkce.CreateCodeVerifier()
+	if err != nil {
+		return nil, err
+	}
+
+	cc := oauth2.SetAuthURLParam("code_challenge", v.CodeChallengeS256())
+	ccm := oauth2.SetAuthURLParam("code_challenge_method", "S256")
+	state := uuid.New().String()
+	if cfg.Audience == "" {
+		cfg.Audience = cfg.Server
+	}
+	audience := oauth2.SetAuthURLParam("audience", cfg.Audience)
+	authURL := oauthCfg.AuthCodeURL(state, cc, ccm, audience)
 
 	fmt.Println("navigate to the following URL in your browser:\r")
 	fmt.Println("\r")
 
-	fmt.Printf("  %s\r\n", u.String())
+	fmt.Printf("  %s\r\n", authURL)
 
-	_ = open.Start(u.String())
+	_ = open.Start(authURL)
 
 	var err2 error
 
 	select {
-	case codeMsg := <-tokenChannel:
+	case codeMsg := <-codeChannel:
 		code = codeMsg
 	case errorMsg := <-errorChannel:
 		err2 = errorMsg
@@ -76,30 +107,27 @@ func (l *UserLogin) Login(targetUrl string) (*config.SignedToken, error) {
 	}
 
 	// have a code, exchange it for a token
-	client := &web.Client{Server: targetUrl}
-	tkn, err := client.FetchRefreshToken(code.ClientId, code.Code)
+	cv := oauth2.SetAuthURLParam("code_verifier", v.String())
+	tkn, err := oauthCfg.Exchange(context.Background(), code, cv)
 	if err != nil {
 		return nil, err
 	}
-
+	cfg.OauthConfig = oauthCfg
+	cfg.OauthToken = tkn
 	return tkn, nil
 }
 
-func listenForTokenCallback(tokenChannel chan *AuthCode, errorChannel chan error, portChannel chan string, targetUrl string) {
+func listenForTokenCallback(codeChannel chan string, errorChannel chan error, portChannel chan string, targetUrl string) {
 	s := &http.Server{
-		Addr: "127.0.0.1:0",
+		Addr: "127.0.0.1:31337",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", targetUrl)
 			code := r.URL.Query().Get("code")
-			clientId := r.URL.Query().Get("clientId")
 
-			ac := &AuthCode{
-				Code:     code,
-				ClientId: clientId,
-			}
-			tokenChannel <- ac
+			codeChannel <- code
 			if r.Header.Get("Upgrade-Insecure-Requests") != "" {
-				http.Redirect(w, r, fmt.Sprintf("%s/auth/success", targetUrl), http.StatusFound)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				_, _ = io.WriteString(w, successHtml)
 			}
 		}),
 	}

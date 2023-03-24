@@ -96,8 +96,16 @@ mim login add -s https://api.mimiro.io -a prod --clientId="..." --clientSecret="
 			data.Audience = audience
 		case "user":
 			// this needs only auth server
-			authorizer, _ := cmd.Flags().GetString("authorizer")
+			authorizer, err := cmd.Flags().GetString("authorizer")
+			driver.RenderError(err, true)
+			audience, err := cmd.Flags().GetString("audience")
+			driver.RenderError(err, true)
+			clientId, err := cmd.Flags().GetString("clientId")
+			driver.RenderError(err, true)
+
 			data.Authorizer = authorizer
+			data.ClientId = clientId
+			data.Audience = audience
 		case "token":
 			data.Token = token // allow empty token
 		case "unsecured":
