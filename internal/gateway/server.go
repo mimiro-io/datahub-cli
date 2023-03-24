@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/queries"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"io"
 	"io/fs"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/web"
 )
 

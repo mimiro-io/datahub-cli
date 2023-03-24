@@ -19,11 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/web"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
@@ -60,7 +60,7 @@ mim transform import <my-job> -f <transform.js>
 
 		importer := NewImporter(file)
 		var code []byte
-		if filepath.Ext(file) == ".ts"{
+		if filepath.Ext(file) == ".ts" {
 			code, err = importer.ImportTs()
 		} else {
 			code, err = importer.ImportJs()

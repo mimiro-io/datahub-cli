@@ -17,12 +17,12 @@ package datasets
 import (
 	"context"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"os"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 )

@@ -18,11 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/web"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"strings"
 
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/tidwall/pretty"
 

@@ -19,12 +19,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/web"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"

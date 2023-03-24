@@ -15,9 +15,9 @@
 package txns
 
 import (
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
@@ -63,4 +63,3 @@ mim txn execute -f <txn.json>
 func init() {
 	ExecuteCmd.Flags().StringP("file", "f", "", "The transaction data file to execute")
 }
-

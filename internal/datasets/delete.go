@@ -17,9 +17,9 @@ package datasets
 import (
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/web"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"os"
 
-	"github.com/mimiro-io/datahub-cli/internal/api"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 
 	"github.com/mimiro-io/datahub-cli/internal/utils"
