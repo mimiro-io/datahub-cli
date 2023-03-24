@@ -21,6 +21,7 @@ import (
 	"github.com/mimiro-io/datahub-cli/internal/web"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 )
 
 var UseCmd = &cobra.Command{
@@ -51,7 +52,7 @@ mim login use --alias="dev"
 	},
 }
 
-func UseLogin(alias string) (*config.SignedToken, error) {
+func UseLogin(alias string) (*oauth2.Token, error) {
 
 	// can we login?
 	data, err := getLoginAlias(alias)
@@ -69,52 +70,44 @@ func UseLogin(alias string) (*config.SignedToken, error) {
 		}
 	}
 
-	var tkn *config.SignedToken
-	var err2 error
+	var tkn *oauth2.Token
 	switch loginType {
 	case "admin":
-		token, err := web.DoAdminLogin(data)
-		tkn = token
-		err2 = err
-	case "cert":
-		token, err := web.GetTokenWithClientCert(data)
-		tkn = token
-		err2 = err
-	case "client":
-		token, err := web.ResolveCredentials()
-		tkn = token
-		err2 = err
-	case "user":
-		// if we have a valid refresh token already set, no need to relog, just refresh
-		token, err := web.GetValidToken(data)
+		tkn, err = web.GetValidToken(data)
 		if err != nil {
-			// not valid or missing
-			lc := NewUserLogin()
-			t, e := lc.Login(data.Authorizer)
-			tkn = t
-			err2 = e
-		} else {
-			tkn = token
+			tkn, err = web.DoAdminLogin(data)
 		}
-		if err2 == nil {
-			data.SignedToken = tkn
+	case "cert":
+		tkn, err = web.GetValidToken(data)
+		if err != nil {
+			tkn, err = web.GetTokenWithClientCert(data)
+		}
+	case "client":
+		tkn, err = web.GetValidToken(data)
+		if err != nil {
+			tkn, err = web.DoClientLogin(data)
+		}
+	case "user":
+		tkn, err = web.GetValidToken(data)
+		if err != nil {
+			lc := NewUserLogin()
+			tkn, err = lc.Login(data)
 		}
 	default:
-		tkn = &config.SignedToken{AccessToken: data.Token}
+		tkn = &oauth2.Token{
+			AccessToken: data.Token,
+		}
 	}
 
-	if err2 != nil {
-		return nil, err2
+	if err != nil {
+		return nil, err
 	}
 
+	data.OauthToken = tkn
 	data.Type = loginType         // this will upgrade existing ones as they are used
 	_ = config.Store(alias, data) // don't care about error
 
 	fmt.Println("login success.")
-	/* err = AttemptLogin(data.Server, tkn.AccessToken)
-	if err != nil {
-		return nil, err
-	} */
 	return tkn, nil
 }
 

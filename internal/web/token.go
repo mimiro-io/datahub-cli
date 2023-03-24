@@ -15,20 +15,21 @@
 package web
 
 import (
-	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
-	"io/ioutil"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/pkg/errors"
@@ -54,64 +55,34 @@ func GetServerFromAlias(alias string) string {
 	}
 }
 
-func ResolveCredentialsFromAlias(alias string) (*config.SignedToken, error) {
+func ResolveCredentialsFromAlias(alias string) (*oauth2.Token, error) {
 	if alias != "" {
 		cfg, err := getLoginAlias(alias)
 		if err != nil {
 			return nil, err
 		}
 
-		loginType := cfg.Type
 		if cfg.Type == "" {
 			if cfg.ClientId == "" {
-				loginType = "token"
+				cfg.Type = "token"
 			} else {
-				loginType = "client"
+				cfg.Type = "client"
 			}
 		}
 
-		switch loginType {
-		case "client":
-			return exchangeToken(cfg)
-		case "admin":
-			tkn, err := GetValidToken(cfg)
-			if err != nil {
-				return nil, err
-			}
-			cfg.SignedToken = tkn
-			_ = config.Store(alias, cfg)
-			return tkn, nil
-		case "user":
-			tkn, err := GetValidToken(cfg)
-			if err != nil {
-				return nil, err
-			}
-			cfg.SignedToken = tkn
-			_ = config.Store(alias, cfg)
-			return tkn, nil
-		case "cert":
-			tkn, err := GetValidToken(cfg)
-			if err != nil {
-				return nil, err
-			}
-			cfg.SignedToken = tkn
-			_ = config.Store(alias, cfg)
-			return tkn, nil
-		case "unsecured":
-			// this can be improved.
-			return &config.SignedToken{AccessToken: cfg.Token}, nil
-		case "token":
-			return &config.SignedToken{AccessToken: cfg.Token}, nil
-		default:
-			return nil, errors.New("unrecognised auth type")
+		tkn, err := GetValidToken(cfg)
+		if err != nil {
+			return nil, err
 		}
+		_ = config.Store(alias, cfg)
+		return tkn, nil
 	}
 
 	token := viper.GetString("token")
-	return &config.SignedToken{AccessToken: token}, nil
+	return &oauth2.Token{AccessToken: token}, nil
 }
 
-func ResolveCredentials() (*config.SignedToken, error) {
+func ResolveCredentials() (*oauth2.Token, error) {
 	alias := viper.GetString("activelogin")
 	return ResolveCredentialsFromAlias(alias)
 }
@@ -119,11 +90,11 @@ func ResolveCredentials() (*config.SignedToken, error) {
 func createJWTForTokenRequest(subject string, audience string, privateKey *rsa.PrivateKey) (string, error) {
 	uniqueId := uuid.New()
 
-	claims := jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(time.Minute * 1).Unix(),
-		Id:        uniqueId.String(),
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 1)),
+		ID:        uniqueId.String(),
 		Subject:   subject,
-		Audience:  audience,
+		Audience:  jwt.ClaimStrings{audience},
 	}
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(privateKey)
@@ -133,7 +104,10 @@ func createJWTForTokenRequest(subject string, audience string, privateKey *rsa.P
 	return token, nil
 }
 
-func GetTokenWithClientCert(cfg *config.Config) (*config.SignedToken, error) {
+func GetTokenWithClientCert(cfg *config.Config) (*oauth2.Token, error) {
+	// This may be simplified when rfc7523 private_key_jwt in client credentials flow is supported by golang/oauth2
+	// See https://github.com/golang/oauth2/pull/450
+
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
 	data.Set("client_assertion_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
@@ -151,92 +125,70 @@ func GetTokenWithClientCert(cfg *config.Config) (*config.SignedToken, error) {
 	response := make(map[string]interface{})
 	err = decoder.Decode(&response)
 	accessToken := response["access_token"].(string)
-	token := &config.SignedToken{}
-	token.AccessToken = accessToken
-	cfg.SignedToken = token
-	return token, nil
+
+	return &oauth2.Token{
+		AccessToken: accessToken,
+	}, nil
 }
 
-func GetValidToken(cfg *config.Config) (*config.SignedToken, error) {
-	tkn := cfg.SignedToken
-	if tkn == nil {
+func GetValidToken(cfg *config.Config) (*oauth2.Token, error) {
+	if cfg.OauthToken == nil {
 		return nil, eris.New("token is missing, please login first")
 	}
 
-	claims, err := tkn.Unpack()
-	if err != nil {
-		return nil, eris.New("failed to unpack the token")
+	switch cfg.Type {
+	case "cert":
+		if cfg.OauthToken.Valid() {
+			return cfg.OauthToken, nil
+		}
+		return GetTokenWithClientCert(cfg)
+	case "admin":
+	case "client":
+		return oauth2.ReuseTokenSource(cfg.OauthToken, cfg.ClientCredentialsConfig.TokenSource(context.Background())).Token()
+	case "user":
+		return cfg.OauthConfig.TokenSource(context.Background(), cfg.OauthToken).Token()
+	case "token":
+	case "unsecured":
+		return &oauth2.Token{
+			AccessToken: cfg.Token,
+		}, nil
+	default:
+		return nil, eris.New("unrecognized auth type")
 	}
-	now := time.Now()
-	valid := claims.VerifyExpiresAt(now.Unix(), true)
 
-	if !valid {
-		if cfg.Type == "cert" {
+	return nil, nil
+}
 
-		} else if cfg.Type == "admin" {
-			tkn2, err := DoAdminLogin(cfg)
-			if err != nil {
-				return nil, eris.Wrap(err, "failed to refresh token")
-			}
-			return tkn2, nil
-		} else {
-			tkn2, err := RefreshToken(claims.Subject, tkn.RefreshToken, cfg)
-			if err != nil {
-				return nil, eris.Wrap(err, "failed to refresh token")
-			}
-			return tkn2, nil
+func DoAdminLogin(cfg *config.Config) (*oauth2.Token, error) {
+	if cfg.ClientCredentialsConfig == nil {
+		// might need to set AuthStyle to params here
+		cfg.ClientCredentialsConfig = &clientcredentials.Config{
+			ClientID:     cfg.ClientId,
+			ClientSecret: cfg.ClientSecret,
+			TokenURL:     cfg.Server + "/security/token",
 		}
 	}
-	return tkn, nil
+
+	return cfg.ClientCredentialsConfig.Token(context.Background())
 }
 
-func DoAdminLogin(cfg *config.Config) (*config.SignedToken, error) {
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-	data.Set("client_id", cfg.ClientId)
-	data.Set("client_secret", cfg.ClientSecret)
-
-	reqUrl := cfg.Server + "/security/token"
-	res, err := http.PostForm(reqUrl, data)
+func DoClientLogin(cfg *config.Config) (*oauth2.Token, error) {
+	ctx := oidc.InsecureIssuerURLContext(context.Background(), cfg.Authorizer)
+	provider, err := oidc.NewProvider(ctx, cfg.Authorizer)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
-	statusOK := res.StatusCode >= 200 && res.StatusCode < 300
-	if !statusOK {
-		bodyBytes, _ := ioutil.ReadAll(res.Body)
-		return nil, fmt.Errorf("%d: %s", res.StatusCode, string(bodyBytes))
-	}
 
-	decoder := json.NewDecoder(res.Body)
-	response := make(map[string]interface{})
-	err = decoder.Decode(&response)
-	accessToken := response["access_token"].(string)
-	token := &config.SignedToken{}
-	token.AccessToken = accessToken
-	cfg.SignedToken = token
-	return token, nil
-}
-
-func exchangeToken(cfg *config.Config) (*config.SignedToken, error) {
-	// so, depending on the type, it behaves differently
-
-	request := tokenRequest{
-		ClientId:     cfg.ClientId,
-		ClientSecret: cfg.ClientSecret,
-		Audience:     cfg.Audience,
-		GrantType:    "app_credentials",
+	params := url.Values{"audience": []string{cfg.Audience}}
+	cc := &clientcredentials.Config{
+		ClientID:       cfg.ClientId,
+		ClientSecret:   cfg.ClientSecret,
+		TokenURL:       provider.Endpoint().TokenURL,
+		EndpointParams: params,
 	}
+	cfg.ClientCredentialsConfig = cc
 
-	if request.Audience == "" {
-		request.Audience = cfg.Server
-	}
-	client := &Client{Server: cfg.Authorizer}
-	response := &config.SignedToken{}
-	if err := client.doMutate(cfg.Authorizer, "POST", nil, request, response); err != nil {
-		return nil, err
-	}
-	return response, nil
+	return cc.Token(ctx)
 }
 
 func getLoginAlias(alias string) (*config.Config, error) {
@@ -247,86 +199,20 @@ func getLoginAlias(alias string) (*config.Config, error) {
 	return data, nil
 }
 
-func RefreshToken(clientId, refreshToken string, cfg *config.Config) (*config.SignedToken, error) {
-	tkn := &config.SignedToken{}
-	request := tokenRequest{
-		ClientId:     clientId,
-		GrantType:    "refresh_token",
-		RefreshToken: refreshToken,
-	}
-	if err := doMutate(fmt.Sprintf("%s/oauth/token", cfg.Authorizer), "POST", nil, request, tkn); err != nil {
-		return nil, err
-	}
-	return tkn, nil
-}
-
-// Copied from the client to avoid refresh loop issue causing stack overflow. Might want to optimize in the future.
-func doMutate(url string, method string, token *config.SignedToken, request interface{}, response interface{}) error {
-
-	content, err := json.Marshal(request)
-	if err != nil {
-		return ErrFailedToMarshal
-	}
-
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(content))
-	if err != nil {
-		return eris.Wrap(err, "failed creating http request for some reason")
-	}
-
-	if token != nil {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return eris.Wrap(err, "failed to call endpoint")
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return eris.Wrap(err, "impossible to read the result")
-	}
-	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
-		if response != nil {
-			err := json.Unmarshal(bodyBytes, response)
-			if err != nil {
-				return eris.Wrap(err, "failed to unmarshal response")
-			}
-		}
-	} else {
-		// so, we might get back a message object, so lets attempt to parse that
-		msg := make(map[string]interface{})
-		err = json.Unmarshal(bodyBytes, &msg)
-		if err != nil {
-			return eris.New("Got http status " + resp.Status)
-		}
-		if m, ok := msg["message"]; ok {
-			return eris.New(fmt.Sprintf("%v: %s", resp.StatusCode, m))
-		}
-		return eris.New("Got http status " + resp.Status)
-	}
-
-	return nil
-}
-
 func GenerateRsaKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
 	key, _ := rsa.GenerateKey(rand.Reader, 4096)
 	return key, &key.PublicKey
 }
 
 func ExportRsaPrivateKeyAsPem(key *rsa.PrivateKey) (string, error) {
-	bytes, err := x509.MarshalPKCS8PrivateKey(key)
+	b, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {
 		return "", err
 	}
 	pemBytes := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "PRIVATE KEY",
-			Bytes: bytes,
+			Bytes: b,
 		},
 	)
 	return string(pemBytes), nil
@@ -341,7 +227,7 @@ func ParseRsaPrivateKeyFromPem(pemValue []byte) (*rsa.PrivateKey, error) {
 }
 
 func ExportRsaPublicKeyAsPem(key *rsa.PublicKey) (string, error) {
-	bytes, err := x509.MarshalPKIXPublicKey(key)
+	b, err := x509.MarshalPKIXPublicKey(key)
 	if err != nil {
 		return "", err
 	}
@@ -349,7 +235,7 @@ func ExportRsaPublicKeyAsPem(key *rsa.PublicKey) (string, error) {
 	pemBytes := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "PUBLIC KEY",
-			Bytes: bytes,
+			Bytes: b,
 		},
 	)
 
@@ -417,7 +303,7 @@ func ensureKeys(location string) error {
 	fileinfo, err := os.Stat(location + string(os.PathSeparator) + "node_key")
 	if err == nil {
 		// load data for private key
-		content, err := ioutil.ReadFile(location + string(os.PathSeparator) + fileinfo.Name())
+		content, err := os.ReadFile(location + string(os.PathSeparator) + fileinfo.Name())
 		if err != nil {
 			return err
 		}
@@ -428,7 +314,7 @@ func ensureKeys(location string) error {
 		}
 
 		// public key
-		content, err = ioutil.ReadFile(location + string(os.PathSeparator) + "node_key.pub")
+		content, err = os.ReadFile(location + string(os.PathSeparator) + "node_key.pub")
 		if err != nil {
 			return err
 		}
@@ -452,11 +338,11 @@ func ensureKeys(location string) error {
 		}
 
 		// write keys to files
-		err = ioutil.WriteFile(location+string(os.PathSeparator)+"node_key", []byte(privateKeyPem), 0600)
+		err = os.WriteFile(location+string(os.PathSeparator)+"node_key", []byte(privateKeyPem), 0600)
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(location+string(os.PathSeparator)+"node_key.pub", []byte(publicKeyPem), 0600)
+		err = os.WriteFile(location+string(os.PathSeparator)+"node_key.pub", []byte(publicKeyPem), 0600)
 		if err != nil {
 			return err
 		}
