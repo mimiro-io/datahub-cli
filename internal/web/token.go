@@ -144,9 +144,19 @@ func GetValidToken(cfg *config.Config) (*oauth2.Token, error) {
 		return GetTokenWithClientCert(cfg)
 	case "admin":
 	case "client":
-		return oauth2.ReuseTokenSource(cfg.OauthToken, cfg.ClientCredentialsConfig.TokenSource(context.Background())).Token()
+		token, err := oauth2.ReuseTokenSource(cfg.OauthToken, cfg.ClientCredentialsConfig.TokenSource(context.Background())).Token()
+		if err != nil {
+			return nil, err
+		}
+		cfg.OauthToken = token
+		return token, err
 	case "user":
-		return cfg.OauthConfig.TokenSource(context.Background(), cfg.OauthToken).Token()
+		token, err := cfg.OauthConfig.TokenSource(context.Background(), cfg.OauthToken).Token()
+		if err != nil {
+			return nil, err
+		}
+		cfg.OauthToken = token
+		return token, err
 	case "token":
 	case "unsecured":
 		return &oauth2.Token{
