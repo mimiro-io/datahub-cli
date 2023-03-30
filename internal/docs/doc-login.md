@@ -53,18 +53,24 @@ For a user login type, the Authorizer should point to root, a "/login"-path will
 
 Example:
 ```
-mim login add --type=user --server="https://my.datahub.server" --authorizer="https://auth.example.io"
+mim login add 
+    --type user \
+    --server "https://my.datahub.server" \
+    --authorizer "https://auth.example.io" \
+    --audience "https://my.datahub.server"
+    --clientId cc6aeb0f-fdc5-4040-973d-f27313e1c9e6
+
 ```
 
-When you try to login using this type, a webserver with a random port will be started on your machine.
-Then the cli will attempt to open up your browser with the url to the authorizer login, with a callback 
+When you try to login using this type, a webserver with the port 31337 will be started on your machine.
+The cli will then attempt to open up your browser with the url to the authorizer login, with a callback 
 url to the previously started web server added. The link will also be clickable in the console, in case it fails
 to open.
 
 Once you have logged in, the auth server must callback to the local server with the callback url provided. 
-The callback url must include a login code and clientId that can be further exchanged for a refresh token.
+The callback url must include a login code that can be further exchanged for a refresh token.
 
-This is also known as an "oauth authorization code flow".
+This is also known as an "OAuth authorization code flow".
 
 ### Client login profile
 
@@ -72,6 +78,7 @@ A client login should be used if you are using a machine to represent you.
 
 ```
 mim login add 
+    --type client \
     --alias local \
     --server "https://api.example.io" \
     --clientId "<valid clientId>" \
@@ -83,10 +90,7 @@ mim login add
 The clientId and clientSecret must be valid for the authorizer server. If you ommit the audience, the audience will be
 the same as the server, this is not the case if you are running against a local server, so you should set it appropriately.
 
-Scope has a default value of "app_credentials", and that is correct against the mimiro auth server, however to be compatible
-against auth0, you need to change it to "client_credentials".
-
-There is (currently) no caching of tokens, so if you use Auth0, be advised that this can incur additional costs.
+Tokens are cached locally, so the client will only refresh the token once it is expired.
 
 ### Token login profile
 
