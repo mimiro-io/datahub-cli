@@ -16,6 +16,7 @@ package login
 
 import (
 	"encoding/json"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
@@ -43,7 +44,7 @@ mim login list
 			driver.RenderError(err, true)
 		} else {
 			out := make([][]string, 0)
-			out = append(out, []string{"", "Alias", "Server", "Type", "Token", "ClientId", "ClientSecret", "Authorizer", "Audience"})
+			out = append(out, []string{"", "Alias", "Server", "Type", "Token", "ClientId", "ClientSecret", "Authorizer", "Audience", "Subject"})
 			for k, v := range items {
 				data := &config.Config{}
 				err2 = json.Unmarshal(v, data)
@@ -76,8 +77,17 @@ mim login list
 					active = " -> "
 				}
 
+				var sub string
+				if data.OauthToken != nil {
+					at, err := jwt.ParseString(data.OauthToken.AccessToken, jwt.WithVerify(false), jwt.WithValidate(false))
+					if err != nil {
+						driver.RenderError(err, true)
+					}
+					sub = at.Subject()
+				}
+
 				out = append(out, []string{
-					active, k, data.Server, loginType, token, data.ClientId, secret, data.Authorizer, audience,
+					active, k, data.Server, loginType, token, data.ClientId, secret, data.Authorizer, audience, sub,
 				})
 				out = utils.SortOutputList(out, "Alias")
 			}
