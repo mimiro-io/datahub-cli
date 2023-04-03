@@ -19,9 +19,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gofrs/uuid"
-	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/rotisserie/eris"
-	"io/ioutil"
+	"golang.org/x/oauth2"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -36,7 +36,6 @@ type tokenRequest struct {
 }
 
 type Client struct {
-	token  *config.SignedToken
 	Server string
 }
 
@@ -56,59 +55,44 @@ type Header struct {
 }
 
 func NewClient(server string) (*Client, error) {
-	tkn, err := ResolveCredentials()
-	if err != nil {
-		return nil, err
-	}
 	return &Client{
 		Server: server,
-		token:  tkn,
 	}, nil
 }
 
 func (c *Client) PostRaw(path string, content []byte) ([]byte, error) {
-	return PostRequest(c.Server, c.token.AccessToken, path, content)
+	tkn, err := c.getValidToken()
+	if err != nil {
+		return nil, err
+	}
+	return PostRequest(c.Server, tkn.AccessToken, path, content)
 }
 
 func (c *Client) GetRaw(path string) ([]byte, error) {
-	return GetRequest(c.Server, c.token.AccessToken, path)
+	tkn, err := c.getValidToken()
+	if err != nil {
+		return nil, err
+	}
+	return GetRequest(c.Server, tkn.AccessToken, path)
 }
 
 func (c *Client) PutRaw(path string) ([]byte, error) {
-	return PutRequest(c.Server, c.token.AccessToken, path)
+	tkn, err := c.getValidToken()
+	if err != nil {
+		return nil, err
+	}
+	return PutRequest(c.Server, tkn.AccessToken, path)
 }
 func (c *Client) DeleteRaw(path string) error {
-	return DeleteRequest(c.Server, c.token.AccessToken, path)
+	tkn, err := c.getValidToken()
+	if err != nil {
+		return err
+	}
+	return DeleteRequest(c.Server, tkn.AccessToken, path)
 }
 
-func (c *Client) FetchRefreshToken(clientId, code string) (*config.SignedToken, error) {
-	tkn := &config.SignedToken{}
-	request := tokenRequest{
-		ClientId:  clientId,
-		GrantType: "authorization_code",
-		Code:      code,
-	}
-	if err := c.doMutate("/oauth/token", "POST", nil, request, tkn); err != nil {
-		return nil, err
-	}
-	return tkn, nil
-}
-
-func (c *Client) RefreshToken(clientId, refreshToken string) (*config.SignedToken, error) {
-	tkn := &config.SignedToken{}
-	request := tokenRequest{
-		ClientId:     clientId,
-		GrantType:    "refresh_token",
-		RefreshToken: refreshToken,
-	}
-	if err := c.doMutate("/oauth/token", "POST", nil, request, tkn); err != nil {
-		return nil, err
-	}
-	return tkn, nil
-}
-
-func (c *Client) getValidToken() (*config.SignedToken, error) {
-	return c.token, nil
+func (c *Client) getValidToken() (*oauth2.Token, error) {
+	return ResolveCredentials()
 }
 
 func (c *Client) Delete(endpoint string) error {
@@ -120,7 +104,7 @@ func (c *Client) Delete(endpoint string) error {
 	return c.doDelete(endpoint, tkn)
 }
 
-func (c *Client) doDelete(endpoint string, token *config.SignedToken) error {
+func (c *Client) doDelete(endpoint string, token *oauth2.Token) error {
 	url := fmt.Sprintf("%s%s", c.Server, endpoint)
 	if strings.HasPrefix(endpoint, "http") { // this is a full url
 		url = endpoint
@@ -143,7 +127,7 @@ func (c *Client) doDelete(endpoint string, token *config.SignedToken) error {
 		_ = resp.Body.Close()
 	}()
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return eris.Wrap(err, "impossible to read the result")
 	}
@@ -171,7 +155,7 @@ func (c *Client) Get(endpoint string, response interface{}, headers ...Header) e
 	return c.doGet(endpoint, tkn, response, headers...)
 }
 
-func (c *Client) doGet(endpoint string, token *config.SignedToken, response interface{}, headers ...Header) error {
+func (c *Client) doGet(endpoint string, token *oauth2.Token, response interface{}, headers ...Header) error {
 	url := fmt.Sprintf("%s%s", c.Server, endpoint)
 	if strings.HasPrefix(endpoint, "http") { // this is a full url
 		url = endpoint
@@ -197,7 +181,7 @@ func (c *Client) doGet(endpoint string, token *config.SignedToken, response inte
 		_ = resp.Body.Close()
 	}()
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return eris.Wrap(err, "impossible to read the result")
 	}
@@ -238,7 +222,7 @@ func (c *Client) Put(endpoint string, request interface{}, response interface{})
 	return c.doMutate(endpoint, "PUT", tkn, request, response)
 }
 
-func (c *Client) doMutate(endpoint string, method string, token *config.SignedToken, request interface{}, response interface{}) error {
+func (c *Client) doMutate(endpoint string, method string, token *oauth2.Token, request interface{}, response interface{}) error {
 	url := fmt.Sprintf("%s%s", c.Server, endpoint)
 	if strings.HasPrefix(endpoint, "http") { // this is a full url
 		url = endpoint
@@ -267,7 +251,7 @@ func (c *Client) doMutate(endpoint string, method string, token *config.SignedTo
 		_ = resp.Body.Close()
 	}()
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return eris.Wrap(err, "impossible to read the result")
 	}

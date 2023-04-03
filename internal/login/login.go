@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/web"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -91,7 +91,7 @@ func AttemptLogin(server string, token string) error {
 
 	if resp.StatusCode != http.StatusOK {
 		// should have a response message
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
 		utils.HandleError(err)
 		message := &Response{}
 		err = json.Unmarshal(bodyBytes, message)
