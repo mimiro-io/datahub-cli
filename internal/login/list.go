@@ -78,7 +78,7 @@ mim login list
 				}
 
 				var sub string
-				if data.OauthToken != nil {
+				if data.OauthToken != nil && data.OauthToken.AccessToken != "" {
 					at, err := jwt.ParseString(data.OauthToken.AccessToken, jwt.WithVerify(false), jwt.WithValidate(false))
 					if err != nil {
 						driver.RenderError(err, true)
