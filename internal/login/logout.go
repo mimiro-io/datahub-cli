@@ -15,8 +15,10 @@
 package login
 
 import (
-	"github.com/pterm/pterm"
+	"github.com/mimiro-io/datahub-cli/internal/config"
+	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var LogoutCmd = &cobra.Command{
@@ -26,12 +28,31 @@ var LogoutCmd = &cobra.Command{
 mim logout
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		pterm.EnableDebugMessages()
+		driver := display.ResolveDriver(cmd)
+
+		err := removeToken()
+		driver.RenderError(err, true)
 
 		UpdateConfig("")
 
-		pterm.Success.Println("Logged out of profile")
-		pterm.Println()
-
+		driver.RenderSuccess("Logged out of profile")
 	},
+}
+
+func removeToken() error {
+	alias := viper.GetString("activelogin")
+
+	if alias != "" {
+		data := &config.Config{}
+		if err := config.Load(alias, data); err != nil {
+			return err
+		}
+
+		data.OauthToken = nil
+		if err := config.Store(alias, data); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
