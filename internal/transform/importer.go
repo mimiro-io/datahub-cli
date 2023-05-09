@@ -51,7 +51,7 @@ func (imp *Importer) ImportJs() ([]byte, error) {
 	return []byte(code), nil
 }
 
-func (imp *Importer) ImportTs()([]byte, error)  {
+func (imp *Importer) ImportTs() ([]byte, error) {
 	VerifyNodeInstallation(imp)
 
 	typescriptCmd := []string{"npx", "tt", imp.file}
@@ -61,7 +61,7 @@ func (imp *Importer) ImportTs()([]byte, error)  {
 	return code, err
 }
 
-func VerifyNodeInstallation(imp *Importer)  {
+func VerifyNodeInstallation(imp *Importer) {
 	//check if node is installed
 	checkForNodeCmd := []string{"node", "-v"}
 	_, err := imp.Cmd(checkForNodeCmd)
@@ -75,9 +75,9 @@ func VerifyNodeInstallation(imp *Importer)  {
 	//check if the package needed is installed.
 	pkgList := strings.Split(string(library), "\n")
 	pkgName := "datahub-tslib"
-	isPackageInstalled := utils.ListContainsSubstr(pkgList,pkgName)
+	isPackageInstalled := utils.ListContainsSubstr(pkgList, pkgName)
 
-	if isPackageInstalled == false{
+	if isPackageInstalled == false {
 		pterm.Error.Println(fmt.Sprintf("Missing datahub-tslib package."))
 		pterm.Error.Println(fmt.Sprintf("Please install it. https://open.mimiro.io/software/typescript/"))
 		os.Exit(1)
@@ -127,4 +127,8 @@ func (imp *Importer) fix(content string) string {
 		return c
 	}
 	return content
+}
+
+func (imp *Importer) LoadRaw() ([]byte, error) {
+	return os.ReadFile(imp.file)
 }

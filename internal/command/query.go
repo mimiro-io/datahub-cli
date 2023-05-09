@@ -16,17 +16,21 @@ package command
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"github.com/tidwall/pretty"
 
 	"github.com/mimiro-io/datahub-cli/internal/datasets/printer"
 	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/queries"
+	"github.com/mimiro-io/datahub-cli/internal/transform"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/pkg/api"
 )
@@ -44,6 +48,8 @@ type cmds struct {
 	namespaces    bool
 	limit         int
 	continuations []string
+	file          string
+	timeout       time.Duration
 }
 
 // describeCmd represents the describe command
@@ -62,7 +68,7 @@ mim query --entity <entityURI> --via <predicateURI> --inverse true | false
 		}
 
 		c := resolveCmds(cmd, args)
-		if len(args) == 0 && c.id == "" && len(c.entity) == 0 {
+		if len(args) == 0 && c.id == "" && len(c.entity) == 0 && c.file == "" {
 			_ = cmd.Usage()
 			os.Exit(1)
 		}
@@ -71,33 +77,52 @@ mim query --entity <entityURI> --via <predicateURI> --inverse true | false
 		utils.HandleError(err)
 
 		sink := outputSink(format)
-		if c.expanded {
-			sink = api.SinkExpander{Sink: sink}
-		}
-		if c.id != "" {
-			out, err := queryScalar(c, server, token)
-			utils.HandleError(err)
-			err = outputEntities(out, sink)
-			utils.HandleError(err)
-		} else {
-			result, err := queryEntities(c, server, token)
+
+		if c.file != "" {
+			importer := transform.NewImporter(c.file)
+			code, err := importer.LoadRaw()
 			utils.HandleError(err)
 
-			outputAsEntities, _ := cmd.Flags().GetBool("output-entities")
-			if outputAsEntities && format == "json" {
-				entities := getEntities(result)
-				err = outputEntities(entities, sink)
+			qb := queries.NewQueryBuilder(server, token)
+			result, err := qb.FileQuery(importer.Encode(code), c.timeout)
+			utils.HandleError(err)
+
+			output, err := json.Marshal(result)
+			if format == "json" {
+				fmt.Println(string(output))
+			} else {
+				f := pretty.Pretty(output)
+				out := pretty.Color(f, nil)
+				pterm.Printf("%s", string(out))
+			}
+		} else {
+			if c.expanded {
+				sink = api.SinkExpander{Sink: sink}
+			}
+			if c.id != "" {
+				out, err := queryScalar(c, server, token)
+				utils.HandleError(err)
+				err = outputEntities(out, sink)
 				utils.HandleError(err)
 			} else {
-				pr := newPrinter(format, 50)
-				if c.expanded {
-					pr = &printer.ExpandingPrinter{Printer: pr}
-				}
-				pr.Header(result[0])
-				pr.Print(result[1:])
-				pr.Footer()
-			}
+				result, err := queryEntities(c, server, token)
+				utils.HandleError(err)
 
+				outputAsEntities, _ := cmd.Flags().GetBool("output-entities")
+				if outputAsEntities && format == "json" {
+					entities := getEntities(result)
+					err = outputEntities(entities, sink)
+					utils.HandleError(err)
+				} else {
+					pr := newPrinter(format, 50)
+					if c.expanded {
+						pr = &printer.ExpandingPrinter{Printer: pr}
+					}
+					pr.Header(result[0])
+					pr.Print(result[1:])
+					pr.Footer()
+				}
+			}
 		}
 		pterm.Println()
 	},
@@ -243,6 +268,8 @@ func resolveCmds(cmd *cobra.Command, args []string) cmds {
 	c.namespaces, _ = cmd.Flags().GetBool("namespaces")
 	c.limit, _ = cmd.Flags().GetInt("limit")
 	c.continuations, _ = cmd.Flags().GetStringArray("continuations")
+	c.file, _ = cmd.Flags().GetString("file")
+	c.timeout, _ = cmd.Flags().GetDuration("timeout")
 	return c
 }
 
@@ -289,6 +316,8 @@ func init() {
 	QueryCmd.Flags().Int("limit", 0, "Limit number of search results. If exceeded, response may contain continuations")
 	QueryCmd.Flags().StringArray("continuations", nil,
 		"list of continuation tokens. provide to continue previously started query")
+	QueryCmd.Flags().String("file", "", "Javascript query file")
+	QueryCmd.Flags().Duration("timeout", 0, "Set timeout for file query")
 
 	QueryCmd.RegisterFlagCompletionFunc(
 		"datasets",

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"net/url"
+	"time"
 
 	"github.com/mimiro-io/datahub-cli/internal/web"
 )
@@ -169,4 +170,26 @@ func (qb *QueryBuilder) GetNamespacePrefix(urlExpansion string) (string, error) 
 	}
 
 	return n.Prefix, nil
+}
+
+func (qb *QueryBuilder) FileQuery(fileContent string, timeout time.Duration) ([]any, error) {
+	payload := map[string]string{"query": fileContent}
+	headers := map[string]string{"Content-Type": "application/x-javascript-query"}
+
+	content, err := json.Marshal(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := web.PostRequestWithHeaders(qb.server, qb.token, "/query", content, headers, timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []any
+	err = json.Unmarshal(res, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
