@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
-func sendRequest(method string, server string, token string, path string, content []byte) ([]byte, error) {
+func sendRequest(method string, server string, token string, path string, content []byte, headers map[string]string, timeout time.Duration) ([]byte, error) {
 	req, err := http.NewRequest(method, fmt.Sprintf("%s%s", server, path), bytes.NewBuffer(content))
 
 	if err != nil {
@@ -36,7 +37,17 @@ func sendRequest(method string, server string, token string, path string, conten
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	if headers != nil {
+		for key, val := range headers {
+			req.Header.Set(key, val)
+		}
+	}
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -166,10 +177,14 @@ func PutRequest(server string, token string, path string) ([]byte, error) {
 }
 
 func PostRequest(server string, token string, path string, content []byte) ([]byte, error) {
-	return sendRequest("POST", server, token, path, content)
+	return sendRequest("POST", server, token, path, content, nil, 0)
 }
 
 func PatchRequest(server string, token string, path string, content []byte) ([]byte, error) {
-	return sendRequest("PATCH", server, token, path, content)
+	return sendRequest("PATCH", server, token, path, content, nil, 0)
 
+}
+
+func PostRequestWithHeaders(server string, token string, path string, content []byte, headers map[string]string, timeout time.Duration) ([]byte, error) {
+	return sendRequest("POST", server, token, path, content, headers, timeout)
 }
