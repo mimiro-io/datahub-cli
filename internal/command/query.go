@@ -18,21 +18,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/docs"
-	"github.com/mimiro-io/datahub-cli/internal/transform"
-	"github.com/mimiro-io/datahub-cli/pkg/api"
-	"github.com/tidwall/pretty"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"github.com/tidwall/pretty"
 
 	"github.com/mimiro-io/datahub-cli/internal/datasets/printer"
 	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/queries"
+	"github.com/mimiro-io/datahub-cli/internal/transform"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/pkg/api"
 )
@@ -50,7 +48,7 @@ type cmds struct {
 	namespaces    bool
 	limit         int
 	continuations []string
-  file          string
+	file          string
 	timeout       time.Duration
 }
 
