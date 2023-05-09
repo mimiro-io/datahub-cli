@@ -17,30 +17,33 @@ package command
 import (
 	"context"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/docs"
-	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"os"
 	"strings"
 
+	"github.com/pterm/pterm"
+	"github.com/spf13/cobra"
+
 	"github.com/mimiro-io/datahub-cli/internal/datasets/printer"
+	"github.com/mimiro-io/datahub-cli/internal/docs"
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/queries"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
-	"github.com/pterm/pterm"
-	"github.com/spf13/cobra"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 )
 
 type cmds struct {
-	id         string
-	entity     []string
-	via        string
-	inverse    bool
-	json       bool
-	pretty     bool
-	expanded   bool
-	datasets   []string
-	details    bool
-	namespaces bool
+	id            string
+	entity        []string
+	via           string
+	inverse       bool
+	json          bool
+	pretty        bool
+	expanded      bool
+	datasets      []string
+	details       bool
+	namespaces    bool
+	limit         int
+	continuations []string
 }
 
 // describeCmd represents the describe command
@@ -115,7 +118,7 @@ func getEntities(result []interface{}) []*api.Entity {
 	entities := make([]*api.Entity, 0)
 
 	for i, e := range result {
-		if i == 0 { // this will always be an entity
+		if i == 0 || i == len(result)-1 { // this will always be an entity
 			entities = append(entities, e.(*api.Entity))
 		} else {
 			items := e.([]interface{})
@@ -126,11 +129,12 @@ func getEntities(result []interface{}) []*api.Entity {
 }
 
 func newPrinter(format string, batchSize int) printer.Printer {
-	if format == "pretty" {
+	switch format {
+	case "pretty":
 		return &printer.PrettyPrint{Batch: batchSize}
-	} else if format == "json" {
+	case "json":
 		return &printer.Raw{Batch: 1000}
-	} else {
+	default:
 		return &term{batchSize: batchSize}
 	}
 }
@@ -141,23 +145,26 @@ type term struct {
 }
 
 func (t *term) Print(entities []interface{}) {
-
 	out := make([][]string, 0)
 	if !t.header {
 		out = append(out, []string{"Uri", "PredicateUri", "Id", "Recorded", "Deleted", "Props", "Refs"})
 	}
 
 	for _, e := range entities {
-
-		raw := e.([]interface{})
-		obj := raw[2].(*api.Entity)
-		id := obj.ID
-
-		if id == "@context" {
-			t.prettyContext(obj)
-		} else if id == "@continuation" {
-			pterm.DefaultSection.Println(fmt.Sprintf("Continuation token: %s", obj.Properties["token"]))
+		raw, isSearchRes := e.([]interface{})
+		var obj *api.Entity
+		if isSearchRes {
+			obj = raw[2].(*api.Entity)
 		} else {
+			obj = e.(*api.Entity)
+		}
+		id := obj.ID
+		switch id {
+		case "@context":
+			t.prettyContext(obj)
+		case "@continuation":
+			pterm.DefaultSection.Println(fmt.Sprintf("Continuation token: %s", obj.Properties["token"]))
+		default:
 			out = append(out, t.prettyEntity(id, raw))
 		}
 	}
@@ -234,6 +241,8 @@ func resolveCmds(cmd *cobra.Command, args []string) cmds {
 	c.expanded, _ = cmd.Flags().GetBool("expanded")
 	c.details, _ = cmd.Flags().GetBool("details")
 	c.namespaces, _ = cmd.Flags().GetBool("namespaces")
+	c.limit, _ = cmd.Flags().GetInt("limit")
+	c.continuations, _ = cmd.Flags().GetStringArray("continuations")
 	return c
 }
 
@@ -261,38 +270,47 @@ func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
 func queryEntities(c cmds, server string, token string) ([]interface{}, error) {
 	eq := api.NewEntityQuery(server, token)
 
-	return eq.Query(c.entity, c.via, c.inverse, c.datasets)
+	return eq.Query(c.entity, c.via, c.inverse, c.datasets, c.limit, c.continuations)
 }
 
 func init() {
 	QueryCmd.Flags().StringP("id", "i", "", "The id of the entity you want to fetch")
-	QueryCmd.Flags().StringArray("entity", make([]string, 0), "The URI of the entity to use as start of traversal. May be repeated for batch lookups")
+	QueryCmd.Flags().StringArray("entity", make([]string, 0),
+		"The URI of the entity to use as start of traversal. May be repeated for batch lookups")
 	QueryCmd.Flags().String("via", "", "The URI of the traversal reference type")
 	QueryCmd.Flags().Bool("inverse", false, "Indicates if the traversal is out from the entities or incoming")
-	QueryCmd.Flags().Bool("output-entities", true, "If this is an entity query, and the output is json, then this outputs only the list of entities")
-	QueryCmd.Flags().StringArray("datasets", make([]string, 0), "add a list of datasets to filter in with '<dataset-name>, <dataset-name>'")
+	QueryCmd.Flags().Bool("output-entities", true,
+		"If this is an entity query, and the output is json, then this outputs only the list of entities")
+	QueryCmd.Flags().StringArray("datasets", make([]string, 0),
+		"add a list of datasets to filter in with '<dataset-name>, <dataset-name>'")
 	QueryCmd.Flags().BoolP("expanded", "e", false, "Expand namespace prefixes in entities to full namespace URIs")
 	QueryCmd.Flags().Bool("details", false, "Works only with --id/-i query. Inject entity details into entity result.")
 	QueryCmd.Flags().Bool("namespaces", false, "Works only with --id/-i query. Add context with namespaces.")
+	QueryCmd.Flags().Int("limit", 0, "Limit number of search results. If exceeded, response may contain continuations")
+	QueryCmd.Flags().StringArray("continuations", nil,
+		"list of continuation tokens. provide to continue previously started query")
 
-	QueryCmd.RegisterFlagCompletionFunc("datasets", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if len(args) != 0 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		parts := strings.Split(toComplete, ",")
-		if len(parts) > 1 {
-			pattern := parts[len(parts)-1]
-			result := api.GetDatasetsCompletion(pattern)
-			var values []string
-			for _, res := range result {
-				values = append(values, strings.TrimSuffix(toComplete, pattern)+res)
+	QueryCmd.RegisterFlagCompletionFunc(
+		"datasets",
+		func(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
-			return values, cobra.ShellCompDirectiveNoFileComp
-		}
-		return api.GetDatasetsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
-	})
+			parts := strings.Split(toComplete, ",")
+			if len(parts) > 1 {
+				pattern := parts[len(parts)-1]
+				result := api.GetDatasetsCompletion(pattern)
+				var values []string
+				for _, res := range result {
+					values = append(values, strings.TrimSuffix(toComplete, pattern)+res)
+				}
+				return values, cobra.ShellCompDirectiveNoFileComp
+			}
+			return api.GetDatasetsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+		},
+	)
 
-	QueryCmd.SetHelpFunc(func(command *cobra.Command, strings []string) {
+	QueryCmd.SetHelpFunc(func(command *cobra.Command, _ []string) {
 		pterm.Println()
 		result := docs.RenderMarkdown(command, "doc-query.md")
 		pterm.Println(result)
