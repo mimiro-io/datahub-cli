@@ -56,6 +56,14 @@ func NewContext() *Entity {
 	return e
 }
 
+func NewContinuation() *Entity {
+	e := NewEntity("@continuation")
+	e.Properties["id"] = "@continuation"
+	e.Properties["namespaces"] = make(map[string]interface{})
+
+	return e
+}
+
 func NewContextWithNamespaces(namespaces map[string]interface{}) *Entity {
 	e := NewEntity("@context")
 	e.Properties["id"] = "@context"
@@ -90,9 +98,9 @@ func (e *Entity) GetStringProperty(propName string) string {
 // GetProperty returns the value of the named property as an interface
 func (e *Entity) GetProperty(propName string) interface{} {
 	prop := e.Properties[propName]
-	switch prop.(type) {
+	switch typedProp := prop.(type) {
 	case map[string]interface{}:
-		return NewEntityFromMap(prop.(map[string]interface{}))
+		return NewEntityFromMap(typedProp)
 	default:
 		return prop
 	}
@@ -182,7 +190,9 @@ type httpDatasetSource struct {
 	SinceParamName string
 }
 
-func (httpDatasetSource *httpDatasetSource) readEntities(since string, batchSize int, processEntities func([]*Entity) error) error {
+func (httpDatasetSource *httpDatasetSource) readEntities(
+	since string, batchSize int, processEntities func([]*Entity) error,
+) error {
 	// create headers if needed
 	endpoint, err := url.Parse(httpDatasetSource.Endpoint)
 	if err != nil {
@@ -246,7 +256,8 @@ func (httpDatasetSource *httpDatasetSource) readEntities(since string, batchSize
 	entities := make([]*Entity, 0)
 	esp := NewEntityStreamParser()
 	err = esp.ParseStream(res.Body, func(entity *Entity) error {
-		timer.Reset(2 * time.Second) // we reset this everytime we get data, if we dont get anything more for 2 seconds, we cancel
+		// we reset this everytime we get data, if we dont get anything more for 2 seconds, we cancel
+		timer.Reset(2 * time.Second)
 		entities = append(entities, entity)
 		read++
 		if read == batchSize+2 { // need to account for @context and @continuation
@@ -540,7 +551,8 @@ func (em *EntityManager) Read(dataset string, since string, limit int, reverse b
 	return pipeline.Sync(em.ctx, since, limit)
 }
 
-func (em *EntityManager) buildUrl(server string, dataset string, t DatasetType, limit int, reverse bool) (*url.URL, error) {
+func (em *EntityManager) buildUrl(server string, dataset string, t DatasetType, limit int, reverse bool,
+) (*url.URL, error) {
 	endpoint, err := url.Parse(fmt.Sprintf("%s/datasets/%s/%s", server, dataset, t))
 	if err != nil {
 		return nil, err

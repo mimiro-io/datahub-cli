@@ -19,10 +19,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bcicen/jstream"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/bcicen/jstream"
 )
 
 type EntityQuery struct {
@@ -37,12 +38,23 @@ func NewEntityQuery(server string, token string) *EntityQuery {
 	}
 }
 
-func (eq *EntityQuery) Query(entity []string, via string, inverse bool, datasets []string) ([]interface{}, error) {
+func (eq *EntityQuery) Query(
+	entity []string,
+	via string,
+	inverse bool,
+	datasets []string,
+	limit int,
+	continuations []string,
+) ([]interface{}, error) {
 	q := make(map[string]interface{})
 	q["startingEntities"] = entity
 	q["predicate"] = via
 	q["inverse"] = inverse
 	q["datasets"] = datasets
+	q["limit"] = limit
+	if len(continuations) > 0 {
+		q["continuations"] = continuations
+	}
 
 	if via == "" {
 		q["predicate"] = "*"
@@ -81,8 +93,8 @@ func (eq *EntityQuery) readBody(body io.Reader) ([]interface{}, error) {
 	isFirst := true
 	err := eq.parseStream(body, func(value *jstream.MetaValue) {
 		if isFirst {
-			//p.Header(value.Value)
-			// emmit a @context
+			// p.Header(value.Value)
+			// emit a @context
 			context := NewContext()
 			context.Properties = value.Value.(map[string]interface{})
 
@@ -90,23 +102,30 @@ func (eq *EntityQuery) readBody(body io.Reader) ([]interface{}, error) {
 			isFirst = false
 		} else {
 			for _, v := range value.Value.([]interface{}) {
-				current := 1
-				result := make([]interface{}, 3)
-				for _, ent := range v.([]interface{}) {
-					switch current {
-					case 1:
-						result[0] = ent.(string)
-					case 2:
-						result[1] = ent.(string)
-					default:
-						result[2] = NewEntityFromMap(ent.(map[string]interface{}))
-						entities = append(entities, result)
+				if cont, isCont := v.(string); isCont {
+					// continuations
+					if len(cont) > -0 {
+						cont := NewContinuation()
+						cont.Properties = map[string]interface{}{"token": value.Value}
+						entities = append(entities, cont)
 					}
-					current++
+				} else {
+					current := 1
+					result := make([]interface{}, 3)
+					for _, ent := range v.([]interface{}) {
+						switch current {
+						case 1:
+							result[0] = ent.(string)
+						case 2:
+							result[1] = ent.(string)
+						default:
+							result[2] = NewEntityFromMap(ent.(map[string]interface{}))
+							entities = append(entities, result)
+						}
+						current++
+					}
 				}
-
 			}
-
 		}
 	})
 	if err != nil {
