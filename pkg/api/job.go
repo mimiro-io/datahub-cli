@@ -18,9 +18,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
 	"strings"
 	"time"
+
+	"github.com/mimiro-io/datahub-cli/internal/web"
 
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
@@ -51,6 +52,7 @@ type JobHistory struct {
 	Start     time.Time `json:"start"`
 	End       time.Time `json:"end"`
 	LastError string    `json:"lastError"`
+	Processed int       `json:"processed"`
 }
 
 type JobStatus struct {
@@ -177,7 +179,6 @@ func (jm *JobManager) GetJobStatus(jobId string) ([]JobStatus, error) {
 }
 
 func (jm *JobManager) GetJobHistories() []JobHistory {
-
 	body, err := web.GetRequest(jm.server, jm.token, "/jobs/_/history")
 	utils.HandleError(err)
 

@@ -18,12 +18,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
-	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mimiro-io/datahub-cli/internal/web"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
@@ -100,7 +101,6 @@ type jobFilter struct {
 }
 
 func filterJobs(jobOutputs []api.JobOutput, filters string, filterMode string) ([]api.JobOutput, error) {
-
 	pattern, _ := regexp.Compile("(\\w+)([=><])((?:[A-Za-z0-9-_.:@*+ ]+[,]?)+);?")
 	matches := pattern.FindAllStringSubmatch(filters, -1)
 	var sortedFilters []jobFilter
@@ -279,7 +279,6 @@ func getTransform(job api.Job) string {
 }
 
 func printOutput(output []api.JobOutput, format string) {
-
 	jd, err := json.Marshal(output)
 	utils.HandleError(err)
 
@@ -302,14 +301,42 @@ func printOutput(output []api.JobOutput, format string) {
 func buildOutput(output []api.JobOutput, format string) [][]string {
 	out := make([][]string, 0)
 	if format == "verbose" {
-		out = append(out, []string{"Id", "Title", "Paused", "Tags", "Source", "Transform", "Sink", "Triggers", "Last Run", "Last Duration", "Error"})
+		out = append(
+			out,
+			[]string{
+				"Id",
+				"Title",
+				"Paused",
+				"Tags",
+				"Source",
+				"Transform",
+				"Sink",
+				"Triggers",
+				"Last Run",
+				"Last Duration",
+				"Last Processed",
+				"Error",
+			},
+		)
 	} else {
-		out = append(out, []string{"Title", "Paused", "Tags", "Source", "Transform", "Sink", "Last Run", "Last Duration", "Error"})
+		out = append(out, []string{
+			"Title",
+			"Paused",
+			"Tags",
+			"Source",
+			"Transform",
+			"Sink",
+			"Last Run",
+			"Last Duration",
+			"Last Processed",
+			"Error",
+		})
 	}
 
 	for _, row := range output {
 		lastRun := ""
 		lastDuration := ""
+		lastProcessed := ""
 		lastError := ""
 		title := ""
 		tags := ""
@@ -317,7 +344,8 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 		if row.History != nil {
 			lastRun = row.History.Start.Format(time.RFC3339)
 			timed := row.History.End.Sub(row.History.Start)
-			lastDuration = fmt.Sprintf("%s", timed)
+			lastDuration = timed.String()
+			lastProcessed = fmt.Sprintf("%v", row.History.Processed)
 			lastError = row.History.LastError
 			lastError = strings.ReplaceAll(lastError, "\r\n", " ")
 			lastError = strings.ReplaceAll(lastError, "\n", " ")
@@ -335,7 +363,7 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 		if row.Job.Paused == false {
 			pausedColor = pterm.FgDefault
 		}
-		var pausedItem = pterm.BulletListItem{
+		pausedItem := pterm.BulletListItem{
 			Level:     0,
 			Text:      fmt.Sprintf("%t", row.Job.Paused),
 			TextStyle: pterm.NewStyle(pausedColor),
@@ -409,6 +437,7 @@ func buildOutput(output []api.JobOutput, format string) [][]string {
 		line = append(line,
 			lastRun,
 			lastDuration,
+			lastProcessed,
 			lastError)
 		out = append(out, line)
 	}
@@ -456,6 +485,8 @@ func listJobs(jobs []byte, history []byte) ([]api.JobOutput, error) {
 
 func init() {
 	ListCmd.PersistentFlags().Bool("verbose", false, "Verbose output of jobs list")
-	ListCmd.PersistentFlags().StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar*' or 'title=fo*o,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
-	ListCmd.PersistentFlags().StringP("filterMode", "", "exclusive", "Filter mode used by the filter flag. Default is exclusive meaning only results matching all filters will be returned. Use 'inclusive' to return all results matching one or more filters")
+	ListCmd.PersistentFlags().
+		StringP("filter", "", "", "Filter job list with a filter query i.e  'tags=foo,bar*' or 'title=fo*o,bar'. Combine filters by filters with ';' i.e. 'tags=foo;title=bar'")
+	ListCmd.PersistentFlags().
+		StringP("filterMode", "", "exclusive", "Filter mode used by the filter flag. Default is exclusive meaning only results matching all filters will be returned. Use 'inclusive' to return all results matching one or more filters")
 }
