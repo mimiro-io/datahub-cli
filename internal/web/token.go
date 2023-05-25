@@ -143,6 +143,7 @@ func GetValidToken(cfg *config.Config) (*oauth2.Token, error) {
 		}
 		return GetTokenWithClientCert(cfg)
 	case "admin":
+		fallthrough
 	case "client":
 		token, err := oauth2.ReuseTokenSource(cfg.OauthToken, cfg.ClientCredentialsConfig.TokenSource(context.Background())).Token()
 		if err != nil {
@@ -158,6 +159,7 @@ func GetValidToken(cfg *config.Config) (*oauth2.Token, error) {
 		cfg.OauthToken = token
 		return token, err
 	case "token":
+		fallthrough
 	case "unsecured":
 		return &oauth2.Token{
 			AccessToken: cfg.Token,
@@ -165,8 +167,6 @@ func GetValidToken(cfg *config.Config) (*oauth2.Token, error) {
 	default:
 		return nil, eris.New("unrecognized auth type")
 	}
-
-	return nil, nil
 }
 
 func DoAdminLogin(cfg *config.Config) (*oauth2.Token, error) {
