@@ -52,7 +52,7 @@ func init() {
 	JobsCmd.AddCommand(jobs.GetCmd)
 	JobsCmd.AddCommand(jobs.AddCmd)
 	JobsCmd.AddCommand(jobs.DeleteCmd)
-	JobsCmd.AddCommand(jobs.OperateCmd)
+	JobsCmd.AddCommand(jobs.CmdOperate())
 	JobsCmd.AddCommand(jobs.StatusCmd)
 	JobsCmd.AddCommand(jobs.HistoryCmd)
 

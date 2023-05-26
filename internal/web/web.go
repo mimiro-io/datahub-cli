@@ -19,10 +19,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
 )
+
+const userAgent = "mim_cli/1.0"
 
 func sendRequest(method string, server string, token string, path string, content []byte, headers map[string]string, timeout time.Duration) ([]byte, error) {
 	req, err := http.NewRequest(method, fmt.Sprintf("%s%s", server, path), bytes.NewBuffer(content))
@@ -36,6 +39,7 @@ func sendRequest(method string, server string, token string, path string, conten
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", userAgent)
 
 	if headers != nil {
 		for key, val := range headers {
@@ -119,6 +123,8 @@ func GetRequest(server string, token string, path string) ([]byte, error) {
 	if token != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -129,7 +135,7 @@ func GetRequest(server string, token string, path string) ([]byte, error) {
 	}()
 
 	if resp.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -137,6 +143,27 @@ func GetRequest(server string, token string, path string) ([]byte, error) {
 	} else {
 		return nil, errors.New("Got http status " + resp.Status)
 	}
+
+}
+
+// Get is a shortcut for GetRequest but is using generics to make returning a struct easier
+func Get[T any](server string, token string, path string) (T, error) {
+	var m T
+	res, err := GetRequest(server, token, path)
+	if err != nil {
+		return m, err
+	}
+	return parseJSON[T](res)
+}
+
+// Put is a shortcut for PutRequest but is using generics to make returning a struct easier
+func Put[T any](server string, token string, path string) (T, error) {
+	var m T
+	res, err := PutRequest(server, token, path)
+	if err != nil {
+		return m, err
+	}
+	return parseJSON[T](res)
 
 }
 
@@ -150,6 +177,9 @@ func PutRequest(server string, token string, path string) ([]byte, error) {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", userAgent)
+
 	resp, err := http.DefaultClient.Do(req)
 	defer func() {
 		_ = resp.Body.Close()
@@ -158,7 +188,7 @@ func PutRequest(server string, token string, path string) ([]byte, error) {
 		return nil, err
 	}
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -187,4 +217,12 @@ func PatchRequest(server string, token string, path string, content []byte) ([]b
 
 func PostRequestWithHeaders(server string, token string, path string, content []byte, headers map[string]string, timeout time.Duration) ([]byte, error) {
 	return sendRequest("POST", server, token, path, content, headers, timeout)
+}
+
+func parseJSON[T any](s []byte) (T, error) {
+	var r T
+	if err := json.Unmarshal(s, &r); err != nil {
+		return r, err
+	}
+	return r, nil
 }
