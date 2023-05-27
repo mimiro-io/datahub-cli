@@ -15,162 +15,208 @@
 package jobs
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/internal/web"
+	"github.com/mimiro-io/datahub-cli/internal/login"
+	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/pkg/api"
+	"github.com/rotisserie/eris"
+	"golang.org/x/sync/errgroup"
 	"os"
 	"time"
 
-	"github.com/mimiro-io/datahub-cli/internal/login"
-	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
-// OperateCmd represents the operate command
-var OperateCmd = &cobra.Command{
-	Use:   "operate",
-	Short: "Run, stop, pause, resume and kill jobs with given jobid",
-	Long: `Run, stop, pause, resume and kill jobs with given jobid, For example:
-mim jobs operate -i <jobid> -o stop
-or
-mim jobs operate --id <jobid> --operation stop
+func CmdOperate() *cobra.Command {
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	var (
+		operation string
+		ids       []string
+		since     string
+		jobType   string
+		wait      bool
+	)
 
-		if len(args) == 0 {
-			cmd.Usage()
-			os.Exit(0)
-		}
+	cmd := &cobra.Command{
+		Use:   "operate",
+		Short: "Run, stop, pause, resume and kill jobs with given job id",
+		Long: `Run, stop, pause, resume and kill jobs with given job id, For example:
 
-		server, token, err := login.ResolveCredentials()
-		utils.HandleError(err)
+	mim jobs operate -i <id> -o stop
+	mim jobs operate --id <id> --operation stop
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(ids) == 0 && len(args) > 0 {
+				ids = []string{args[0]}
+			}
 
-		pterm.EnableDebugMessages()
+			if len(ids) == 0 {
+				_ = cmd.Usage()
+				os.Exit(0)
+			}
 
-		idOrTitle, err := cmd.Flags().GetString("id")
-		utils.HandleError(err)
-		if idOrTitle == "" && len(args) > 0 {
-			idOrTitle = args[0]
-		}
+			// we only allow 1 job if we are following, because of reasons of complexity
+			if len(ids) > 1 && operation == "run" && wait {
+				utils.HandleError(eris.New("When following a job, only 1 id is allowed"))
+			}
 
-		operation, err := cmd.Flags().GetString("operation")
-		utils.HandleError(err)
-
-		since, err := cmd.Flags().GetString("since")
-		utils.HandleError(err)
-
-		wait, err := cmd.Flags().GetBool("wait")
-		utils.HandleError(err)
-
-		jm := api.NewJobManager(server, token)
-		id := jm.ResolveId(idOrTitle)
-
-		pterm.DefaultSection.Printf("Execute operation " + operation + " on job with id: " + id + " (" + idOrTitle + ") on " + server)
-		pterm.Println()
-		if operation == "run" {
-			// is job running?
-			running, err := jm.GetJobStatus(id)
+			server, token, err := login.ResolveCredentials()
 			utils.HandleError(err)
-			runningId := ""
-			if len(running) == 0 { // not running
-				jobType, err := cmd.Flags().GetString("jobType")
-				utils.HandleError(err)
 
-				endpoint := fmt.Sprintf("/job/%s/run", id)
-				if jobType != "" {
-					endpoint = endpoint + "?jobType=" + jobType
+			pterm.EnableDebugMessages()
+
+			pterm.DefaultSection.Printf("Executing operation '%s' on %s", pterm.Cyan(operation), server)
+			pterm.Println()
+
+			jm := api.NewJobManager(server, token)
+			resolvedIds := jm.ResolveIds(ids...)
+
+			// if the operation is kill, ask for confirmation before proceeding
+			if operation == "kill" {
+				pterm.DefaultSection.Printf("Do you really want to kill job(s), type (y)es or (n)o and then press enter:")
+				if !utils.AskForConfirmation() {
+					pterm.Warning.Println("Aborted kill!")
+					os.Exit(0)
 				}
-				response, err := web.PutRequest(server, token, endpoint)
-				utils.HandleError(err)
-				job, err := getJobResponse(response)
-				utils.HandleError(err)
-
-				runningId = job.JobId
-
-				pterm.Success.Println("Job was started")
-			} else {
-				pterm.Success.Println("Job is already running, reattaching")
-				runningId = running[0].JobId
+			} else if operation == "run" && wait {
+				// if operation is run, and we are following, handle differently for now
+				runAndWait(jm, resolvedIds[0], jobType)
+				os.Exit(0)
 			}
 
-			// follow the job
-			if wait {
-				err = followJob(runningId, *jm)
-				utils.HandleError(err)
+			g, _ := errgroup.WithContext(context.Background())
+			g.SetLimit(10) // not sure if needed, but this will limit to 10 requests at once
+			p, _ := pterm.DefaultProgressbar.WithTotal(len(resolvedIds)).WithTitle("Executing operation" + operation).Start()
+			for _, rid := range resolvedIds {
+				id := rid
+				g.Go(func() error {
+					err2 := operate(jm, operation, id, since, jobType)
+					if err2 == nil {
+						pterm.Success.Println("Processed " + id.Title)
+					} else {
+						pterm.Error.Printf("Processed %s, error: %s \n", id.Title, pterm.Red(err2.Error()))
+					}
+					p.Increment()
+					return err2
+				})
+
 			}
-		} else if operation == "pause" {
-			_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/pause", id))
-			utils.HandleError(err)
-
-			pterm.Success.Println("Job was paused")
-		} else if operation == "resume" {
-			_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/resume", id))
-			utils.HandleError(err)
-
-			pterm.Success.Println("Job was resumed")
-		} else if operation == "reset" {
-			_, err = resetJob(server, token, id, since)
-			utils.HandleError(err)
-
-			pterm.Success.Println("Job was reset")
-		} else if operation == "kill" {
-			pterm.DefaultSection.Printf("Do you really want to kill job, type (y)es or (n)o and then press enter:")
-			if utils.AskForConfirmation() {
-				_, err = web.PutRequest(server, token, fmt.Sprintf("/job/%s/kill", id))
-				utils.HandleError(err)
-
-				pterm.Success.Println("Job was killed")
+			err = g.Wait()
+			if err != nil {
 				pterm.Println()
-			} else {
-				pterm.Warning.Println("Aborted kill!")
+				pterm.Println("There was an error with 1 or more operations:")
+				pterm.Error.Println(err)
 			}
 
-		} else {
-			pterm.Warning.Println("Unsupported operation! Supported is run, pause, resume, reset and kill.")
-		}
+			pterm.Println()
 
-		pterm.Println()
-
-	},
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if len(args) != 0 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		return api.GetJobsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
-	},
-}
-
-type jobResponse struct {
-	JobId string `json:"jobId"`
-}
-
-func getJobResponse(response []byte) (*jobResponse, error) {
-	// parse the reponse to get the id
-	job := &jobResponse{}
-	err := json.Unmarshal(response, job)
-	if err != nil {
-		return nil, err
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return api.GetJobsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+		},
 	}
-	return job, nil
+	cmd.Flags().StringVarP(&operation, "operation", "o", "", "The name of the operation")
+	cmd.Flags().StringSliceVarP(&ids, "id", "i", []string{}, "The job id or name of the job you want to operate on. Can be multiple ids.")
+	cmd.Flags().StringVarP(&since, "since", "s", "", "The since token to reset to, if resetting or running")
+	cmd.Flags().StringVarP(&jobType, "jobType", "t", "", "Job type for operation run: fullsync or incremental")
+	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "Use together with run operation to wait for the job to finish. When set you can only have 1 job id.")
+	_ = cmd.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"run", "stop", "pause", "resume", "kill", "reset"}, cobra.ShellCompDirectiveDefault
+	})
+	_ = cmd.RegisterFlagCompletionFunc("jobType", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"fullsync", "incremental"}, cobra.ShellCompDirectiveDefault
+	})
+
+	return cmd
+}
+
+// operate organizes the different Operate calls depending on user input.
+func operate(jm *api.JobManager, operation string, id api.JobId, since string, jobType string) error {
+	ctx := context.Background()
+	var err error
+	switch operation {
+	case "pause":
+		_, err = jm.Operate.Pause(ctx, id.Id)
+	case "resume":
+		_, err = jm.Operate.Resume(ctx, id.Id)
+	case "reset":
+		_, err = jm.Operate.Reset(ctx, id.Id, since)
+	case "kill":
+		_, err = jm.Operate.Kill(ctx, id.Id)
+	case "run":
+		running, err2 := jm.GetJobStatus(id.Id)
+		if err2 != nil {
+			return err2
+		}
+		if len(running) == 0 { // not running
+			_, err = jm.Operate.Run(ctx, id.Id, jobType)
+		}
+	case "test":
+		_, err = jm.Operate.Test(ctx, id.Id)
+	default:
+		pterm.Warning.Println("Unsupported operation! Supported is run, pause, resume, reset and kill.")
+	}
+	return err
+}
+
+// runAndWait is called when wait flag is set and the operation is "run". For now this has to be handled
+// differently than the others, as the ui component is quite different. We also only allow to run 1 job at a
+// time when the wait flag is set.
+func runAndWait(jm *api.JobManager, id api.JobId, jobType string) {
+	// is job running?
+	running, err := jm.GetJobStatus(id.Id)
+	utils.HandleError(err)
+	runningId := ""
+	if len(running) == 0 { // not running
+		job, err := jm.Operate.Run(context.Background(), id.Id, jobType)
+		utils.HandleError(err)
+
+		runningId = job.JobId
+
+		pterm.Success.Println("Job was started")
+	} else {
+		pterm.Success.Println("Job is already running, reattaching")
+		runningId = running[0].JobId
+	}
+
+	pterm.Println()
+	spinner, err := pterm.DefaultSpinner.Start(fmt.Sprintf("Processing job with id '%s'", runningId))
+	utils.HandleError(err)
+	err = followJob(runningId, *jm)
+	if err != nil {
+		spinner.Fail("Failed following job")
+		utils.HandleError(err) // this should be an error in the handling only, not in the job running itself
+	}
+	// we can fetch the job history
+	history, err := jm.GetJobHistoryForId(runningId)
+	if err != nil {
+		spinner.Fail(err)
+	} else {
+		if history.LastError == "" {
+			spinner.Success("Finished")
+		} else {
+			spinner.Fail("Finished with error")
+		}
+		pterm.Info.Println(fmt.Sprintf("Job started: 	%v", utils.Date(history.Start)))
+		pterm.Info.Println(fmt.Sprintf("Job ended: 	%v", utils.Date(history.End)))
+		pterm.Info.Println(fmt.Sprintf("Processed %v entities", history.Processed))
+		if history.LastError != "" {
+			pterm.Error.Println("Last error:")
+			pterm.Println(history.LastError)
+		}
+	}
 }
 
 func followJob(jobId string, jm api.JobManager) error {
-	pterm.Println()
-	spinner, err := pterm.DefaultSpinner.Start(fmt.Sprintf("Processing job with id '%s'", jobId))
-	utils.HandleError(err)
-	success := true
-	msg := "Finished"
 	for {
 		status, err := jm.GetJobStatus(jobId)
 		if err != nil {
-			success = false
-			msg = err.Error()
-			break
+			return err
 		}
 
 		if len(status) == 0 {
@@ -179,33 +225,5 @@ func followJob(jobId string, jm api.JobManager) error {
 
 		time.Sleep(5 * time.Second)
 	}
-	if success {
-		spinner.Success(msg)
-	} else {
-		spinner.Fail(msg)
-	}
 	return nil
-}
-
-func resetJob(server string, token string, jobId string, since string) ([]byte, error) {
-	endpoint := fmt.Sprintf("/job/%s/reset", jobId)
-	if since != "" {
-		endpoint = "?since=" + since
-	}
-
-	return web.PutRequest(server, token, endpoint)
-}
-
-func init() {
-	OperateCmd.Flags().StringP("operation", "o", "", "The name of the operation")
-	OperateCmd.Flags().StringP("id", "i", "", "The jobid name of the job you want to get operate on")
-	OperateCmd.Flags().StringP("since", "s", "", "The since token to reset to, if resetting or running")
-	OperateCmd.Flags().StringP("jobType", "t", "", "jobType for operation run: fullsync or incremental")
-	OperateCmd.Flags().BoolP("wait", "w", false, "Use together with run operation to wait for the job to finish")
-	OperateCmd.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"run", "stop", "pause", "resume", "kill", "reset"}, cobra.ShellCompDirectiveDefault
-	})
-	OperateCmd.RegisterFlagCompletionFunc("jobType", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"fullsync", "incremental"}, cobra.ShellCompDirectiveDefault
-	})
 }

@@ -78,14 +78,21 @@ type HistoryView struct {
 }
 
 type JobManager struct {
-	server string
-	token  string
+	server  string
+	token   string
+	Operate *JobOperation
+}
+
+type JobId struct {
+	Title string
+	Id    string
 }
 
 func NewJobManager(server string, token string) *JobManager {
 	return &JobManager{
-		server: server,
-		token:  token,
+		server:  server,
+		token:   token,
+		Operate: NewJobOperation(server, token),
 	}
 }
 
@@ -222,14 +229,36 @@ func GetJobsCompletion(pattern string) []string {
 }
 
 func (jm *JobManager) ResolveId(title string) string {
+	id := jm.ResolveIds([]string{title}...)[0] // should be ok as we always return the title if id not found
+	return id.Id
+}
+
+func (jm *JobManager) ResolveIds(titles ...string) []JobId {
 	jobList := jm.GetJobs()
 
-	for _, job := range jobList {
-		if job.Title == title {
-			return job.Id
+	ids := make([]JobId, 0)
+	for _, title := range titles {
+		found := false
+		for _, job := range jobList {
+			if job.Title == title {
+				ids = append(ids, JobId{
+					Title: job.Title,
+					Id:    job.Id,
+				})
+				found = true
+				break
+			}
+
 		}
+		if !found {
+			ids = append(ids, JobId{
+				Title: title,
+				Id:    title,
+			})
+		}
+		found = false
 	}
-	return title
+	return ids
 }
 
 func (jm *JobManager) GetJobs() []Job {
