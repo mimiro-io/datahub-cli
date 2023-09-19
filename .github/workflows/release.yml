@@ -31,7 +31,7 @@ jobs:
           echo "$versionTag" > "internal/command/VERSION"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1.18.2
+        uses: goreleaser/goreleaser-action@v4.2.0
         with:
           version: latest
           args: release --rm-dist
