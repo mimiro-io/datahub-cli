@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+
 	"github.com/mimiro-io/datahub-cli/internal/web"
 )
 
@@ -37,7 +38,7 @@ func (o *JobOperation) Resume(_ context.Context, jobId string) (JobOperationResp
 func (o *JobOperation) Reset(_ context.Context, jobId string, since string) (JobOperationResponse, error) {
 	endpoint := fmt.Sprintf("/job/%s/reset", jobId)
 	if since != "" {
-		endpoint = "?since=" + since
+		endpoint += "?since=" + since
 	}
 
 	return web.Put[JobOperationResponse](o.server, o.token, endpoint)
