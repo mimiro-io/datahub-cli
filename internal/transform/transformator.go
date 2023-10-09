@@ -16,9 +16,10 @@ package transform
 
 import (
 	"fmt"
-	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"strconv"
 	"strings"
+
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 
 	"github.com/gofrs/uuid"
 
@@ -102,8 +103,8 @@ func (tf *transformer) Query(startingEntities []string, predicate string, invers
 	return data
 }
 
-func (tf *transformer) ById(entityId string) *api.Entity {
-	entity, _, err := tf.query.QuerySingle(entityId, false, []string{})
+func (tf *transformer) ById(entityId string, datasets []string) *api.Entity {
+	entity, _, err := tf.query.QuerySingle(entityId, false, datasets)
 	if err != nil {
 		return nil
 	}
