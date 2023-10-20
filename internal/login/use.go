@@ -15,7 +15,6 @@
 package login
 
 import (
-	"fmt"
 	"github.com/mimiro-io/datahub-cli/internal/config"
 	"github.com/mimiro-io/datahub-cli/internal/display"
 	"github.com/mimiro-io/datahub-cli/internal/web"
@@ -107,7 +106,7 @@ func UseLogin(alias string) (*oauth2.Token, error) {
 	data.Type = loginType         // this will upgrade existing ones as they are used
 	_ = config.Store(alias, data) // don't care about error
 
-	fmt.Println("login success.")
+	pterm.Println("login success.")
 	return tkn, nil
 }
 
