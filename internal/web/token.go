@@ -69,7 +69,6 @@ func ResolveCredentialsFromAlias(alias string) (*oauth2.Token, error) {
 				cfg.Type = "client"
 			}
 		}
-
 		tkn, err := GetValidToken(cfg)
 		if err != nil {
 			return nil, err
@@ -135,7 +134,6 @@ func GetValidToken(cfg *config.Config) (*oauth2.Token, error) {
 	if cfg.OauthToken == nil {
 		return nil, eris.New("token is missing, please login first")
 	}
-
 	switch cfg.Type {
 	case "cert":
 		if cfg.OauthToken.Valid() {
@@ -143,7 +141,11 @@ func GetValidToken(cfg *config.Config) (*oauth2.Token, error) {
 		}
 		return GetTokenWithClientCert(cfg)
 	case "admin":
-		fallthrough
+		token, err := DoAdminLogin(cfg)
+		if err != nil {
+			return nil, err
+		}
+		return token, err
 	case "client":
 		token, err := oauth2.ReuseTokenSource(cfg.OauthToken, cfg.ClientCredentialsConfig.TokenSource(context.Background())).Token()
 		if err != nil {
@@ -178,7 +180,6 @@ func DoAdminLogin(cfg *config.Config) (*oauth2.Token, error) {
 			TokenURL:     cfg.Server + "/security/token",
 		}
 	}
-
 	return cfg.ClientCredentialsConfig.Token(context.Background())
 }
 
