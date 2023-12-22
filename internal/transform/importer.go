@@ -70,10 +70,13 @@ func VerifyNodeInstallation(imp *Importer) {
 	}
 	//list out npm packages
 	checkForLibCmd := []string{"npm", "list"}
+	checkForLibCmdGlobal := []string{"npm", "list", "-g"}
 	library, _ := imp.Cmd(checkForLibCmd)
+	libraryGlobal, _ := imp.Cmd(checkForLibCmdGlobal)
 
 	//check if the package needed is installed.
 	pkgList := strings.Split(string(library), "\n")
+	pkgList = append(pkgList, strings.Split(string(libraryGlobal), "\n")...)
 	pkgName := "datahub-tslib"
 	isPackageInstalled := utils.ListContainsSubstr(pkgList, pkgName)
 
