@@ -30,7 +30,6 @@ import (
 
 	"github.com/mimiro-io/datahub-cli/internal/datasets"
 	"github.com/mimiro-io/datahub-cli/internal/login"
-	"github.com/mimiro-io/datahub-cli/internal/queries"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 )
 
@@ -372,10 +371,7 @@ func transformEntities(entities []*api.Entity, engine *goja.Runtime) ([]*api.Ent
 }
 
 func hookEngine(server string, token string) *goja.Runtime {
-	tf := &transformer{
-		query:            queries.NewQueryBuilder(server, token),
-		assertedPrefixes: make(map[string]string),
-	}
+	tf := newTransformer(server, token)
 	engine := goja.New()
 	engine.Set("Query", tf.Query)
 	engine.Set("FindById", tf.ById)

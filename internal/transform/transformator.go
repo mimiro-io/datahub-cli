@@ -15,7 +15,10 @@
 package transform
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/mimiro-io/datahub-cli/internal/utils"
+	"github.com/mimiro-io/datahub-cli/internal/web"
 	"strconv"
 	"strings"
 
@@ -31,6 +34,28 @@ import (
 type transformer struct {
 	query            *queries.QueryBuilder
 	assertedPrefixes map[string]string
+}
+
+func newTransformer(server string, token string) *transformer {
+	return &transformer{
+		query:            queries.NewQueryBuilder(server, token),
+		assertedPrefixes: getNamespaces(server, token),
+	}
+
+}
+
+func getNamespaces(server string, token string) map[string]string {
+	ns, err := web.GetRequest(server, token, "/namespaces")
+	if err != nil {
+		utils.HandleError(err)
+	}
+	var namespaces map[string]string
+	err = json.Unmarshal(ns, &namespaces)
+	if err != nil {
+		utils.HandleError(err)
+	}
+	return namespaces
+
 }
 
 func (tf *transformer) Log(thing interface{}, logLevel string) {
