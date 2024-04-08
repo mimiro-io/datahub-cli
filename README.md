@@ -24,7 +24,7 @@ More documentation on use can be found in the [MIMIRO data hub](https://github.c
 
 ## Build
 
-Requires Go version 1.15 or later.
+Requires Go.
 
 ```bash
 make mim
