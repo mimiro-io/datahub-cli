@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2.1.3
+        uses: actions/setup-go@v5.0.0
         with:
-          go-version: 1.22
+          go-version: 1.22.2
 
       - name: Cache Go modules
         uses: actions/cache@v2.1.5
@@ -26,8 +26,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Check out source code
-        uses: actions/checkout@v2.3.4
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0 # See: https://goreleaser.com/ci/actions/
 
       - name: Build, test
         run: make all
