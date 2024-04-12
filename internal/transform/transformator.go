@@ -37,11 +37,15 @@ type transformer struct {
 }
 
 func newTransformer(server string, token string) *transformer {
+	namespaces := getNamespaces(server, token)
+	assertedPrefixes := make(map[string]string, len(namespaces))
+	for k, v := range namespaces {
+		assertedPrefixes[v] = k
+	}
 	return &transformer{
 		query:            queries.NewQueryBuilder(server, token),
-		assertedPrefixes: getNamespaces(server, token),
+		assertedPrefixes: assertedPrefixes,
 	}
-
 }
 
 func getNamespaces(server string, token string) map[string]string {
