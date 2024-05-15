@@ -15,24 +15,27 @@
 package datasets
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"os"
+	"strings"
+
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/internal/web"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
-	"os"
-	"strings"
 )
 
 // CreateCmd represents the delete command
 func CreateCmd() *cobra.Command {
-
 	var (
 		name              []string
 		publicNamespaces  []string
 		proxy             bool
+		virtual           bool
+		virtualTransform  string
 		proxyRemoteUrl    string
 		proxyAuthProvider string
 	)
@@ -44,6 +47,15 @@ func CreateCmd() *cobra.Command {
 mim dataset create --name <name>
 or
 mim dataset create <name>
+
+Optionally, you can specify public namespaces for the dataset:
+	mim dataset create <name> --publicNamespaces <namespace1,namespace2>
+
+Optionally, you can specify that the dataset is a proxy dataset:
+	mim dataset create <name> --proxy --proxyRemoteUrl <url> --proxyAuthProvider <authProviderName>
+
+Optionally, you can specify that the dataset is a virtual dataset:
+	mim dataset create <name> --virtual --transform <BASE64_ENCODED_TRANSFORM>
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			server, token, err := login.ResolveCredentials()
@@ -72,6 +84,22 @@ mim dataset create <name>
 				createDatasetConfig.ProxyDatasetConfig.RemoteUrl = proxyRemoteUrl
 				createDatasetConfig.ProxyDatasetConfig.AuthProviderName = proxyAuthProvider
 			}
+			if virtual {
+				createDatasetConfig.VirtualDatasetConfig = &VirtualDatasetConfig{}
+				if virtualTransform == "" {
+					utils.HandleError(errors.New("transform required when virtual=true"))
+				}
+				// try to decode transfarm from base64 and return error if it fails
+				_, err = base64.StdEncoding.Decode(
+					make([]byte, len([]byte(virtualTransform))),
+					[]byte(virtualTransform),
+				)
+				if err != nil {
+					utils.HandleError(errors.New("transform is not valid base64"))
+				}
+
+				createDatasetConfig.VirtualDatasetConfig.Transform = virtualTransform
+			}
 
 			for _, i := range name {
 				err = updateDataset(server, token, i, createDatasetConfig)
@@ -85,7 +113,6 @@ mim dataset create <name>
 				pterm.Success.Printf("Dataset '%s' has been created", i)
 				pterm.Println()
 			}
-
 		},
 		TraverseChildren: true,
 	}
@@ -94,6 +121,8 @@ mim dataset create <name>
 	cmd.Flags().BoolVar(&proxy, "proxy", false, "flag dataset as proxy dataset")
 	cmd.Flags().StringVar(&proxyRemoteUrl, "proxyRemoteUrl", "", "url of proxied remote dataset")
 	cmd.Flags().StringVar(&proxyAuthProvider, "proxyAuthProvider", "", "name of token provider to be used with requests against remote")
+	cmd.Flags().BoolVar(&virtual, "virtual", false, "flag dataset as virtual dataset")
+	cmd.Flags().StringVar(&virtualTransform, "transform", "", "base64 encoded transform define virtual dataset")
 
 	return cmd
 }
@@ -104,16 +133,22 @@ type ProxyDatasetConfig struct {
 	DownstreamTransform string `json:"downstreamTransform"`
 	AuthProviderName    string `json:"authProviderName"`
 }
+
+type VirtualDatasetConfig struct {
+	Transform string `json:"transform"`
+}
+
 type CreateDatasetConfig struct {
-	ProxyDatasetConfig *ProxyDatasetConfig `json:"ProxyDatasetConfig"`
-	PublicNamespaces   []string            `json:"publicNamespaces"`
+	ProxyDatasetConfig   *ProxyDatasetConfig   `json:"ProxyDatasetConfig"`
+	VirtualDatasetConfig *VirtualDatasetConfig `json:"virtualDatasetConfig"`
+	PublicNamespaces     []string              `json:"publicNamespaces"`
 }
 
 func updateDataset(server string, token string, name string, conf *CreateDatasetConfig) error {
 	var b []byte
 	var err error
 
-	if len(conf.PublicNamespaces) > 0 || conf.ProxyDatasetConfig != nil {
+	if len(conf.PublicNamespaces) > 0 || conf.ProxyDatasetConfig != nil || conf.VirtualDatasetConfig != nil {
 		b, err = json.Marshal(conf)
 		if err != nil {
 			return err
@@ -129,5 +164,4 @@ func updateDataset(server string, token string, name string, conf *CreateDataset
 	}
 
 	return nil
-
 }
