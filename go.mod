@@ -1,6 +1,6 @@
 module github.com/mimiro-io/datahub-cli
 
-go 1.22.3
+go 1.22.4
 
 require (
 	github.com/MichaelMure/go-term-markdown v0.1.4
@@ -11,7 +11,7 @@ require (
 	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/dop251/goja v1.0.0
 	github.com/eliukblau/pixterm/pkg/ansimage v0.0.0-20191210081756-9fb6cf8c2f75 // indirect
-	github.com/evanw/esbuild v0.21.2
+	github.com/evanw/esbuild v0.21.5
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -46,7 +46,7 @@ require (
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.20.0 // indirect
-	golang.org/x/text v0.15.0
+	golang.org/x/text v0.16.0
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
