@@ -33,7 +33,7 @@ import (
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
+// RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "mim",
 	Short: "MIMIRO Data Hub CLI",
@@ -78,6 +78,7 @@ func addCommands() {
 	RootCmd.AddCommand(command.ProviderCmd)
 	RootCmd.AddCommand(command.VersionCmd)
 	RootCmd.AddCommand(command.GatewayCmd)
+	RootCmd.AddCommand(command.StatsCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
