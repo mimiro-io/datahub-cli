@@ -77,27 +77,28 @@ func topOutput(statsBytes []byte, format string) {
 			}
 		}
 
-		printTopList(out, totals, 1, "Top 10 Changes")
-		printTopList(out, totals, 2, "Top 10 Entities")
-		printTopList(out, totals, 3, "Top 10 Refs")
-		printTopList(out, totals, 4, "Top 10 Keys Size in bytes")
-		printTopList(out, totals, 5, "Top 10 Values Size in bytes")
-		printTopList(out, totals, 6, "Top 10 Refs Size in bytes")
-		printTopList(out, totals, 7, "Top 10 Changes per Entity")
+		printTopList(out, totals, 1, "Top 10 Changes (Pct of total)   		     ")
+		printTopList(out, totals, 2, "Top 10 Entities (Pct of total)             ")
+		printTopList(out, totals, 3, "Top 10 Refs (Pct of total)                 ")
+		printTopList(out, totals, 4, "Top 10 Keys Size in bytes (Pct of total)   ")
+		printTopList(out, totals, 5, "Top 10 Values Size in bytes (Pct of total) ")
+		printTopList(out, totals, 6, "Top 10 Refs Size in bytes (Pct of total)   ")
+		printTopList(out, totals, 7, "Top 10 Changes per Entity                  ")
 	}
 }
 
 func printTopList(out [][]string, totals [7]int64, colNum int, title string) {
 	sortTable(out, colNum, true) // sort by changes
-	totalTxt := fmt.Sprintf("Total: %10d", totals[colNum-1])
+	totVal := totals[colNum-1]
+	totalTxt := fmt.Sprintf("Total: %10d", totVal)
 	if colNum == 4 || colNum == 5 || colNum == 6 {
-		totalTxt = fmt.Sprintf("Total: %10s", ByteCountIEC(totals[colNum-1]))
+		totalTxt = fmt.Sprintf("Total: %10s", ByteCountIEC(totVal))
 	}
 	if colNum == 7 {
-		totalTxt = fmt.Sprintf("Total: %10.1f", float64(totals[colNum-1])/100)
+		totalTxt = fmt.Sprintf("Total: %10.1f", float64(totVal)/100)
 	}
 
-	bars := pterm.DefaultBarChart.WithHorizontal().WithBars(mkBars(out, colNum)).
+	bars := pterm.DefaultBarChart.WithHorizontal().WithBars(mkBars(out, colNum, totVal)).
 		WithShowValue().WithWidth(50).WithHorizontalBarCharacter("┉")
 	barsTxt, _ := bars.Srender()
 	pterm.DefaultPanel.WithPanels(pterm.Panels{[]pterm.Panel{
@@ -107,13 +108,17 @@ func printTopList(out [][]string, totals [7]int64, colNum int, title string) {
 	}).WithPadding(5).Render()
 }
 
-func mkBars(out [][]string, colNum int) pterm.Bars {
+func mkBars(out [][]string, colNum int, totalValue int64) pterm.Bars {
 	var bars pterm.Bars
 	for i, _ := range out {
 		v, _ := strconv.ParseFloat(strings.TrimSpace(out[i][colNum]), 64)
+		label := fmt.Sprintf("%s (%.2f%%)", out[i][0], 100.0*v/float64(totalValue))
+		if colNum == 7 {
+			label = out[i][0]
+		}
 		bars = append(bars, pterm.Bar{
-			Label: out[i][0], // datasetname
-			Value: int(v),    // value
+			Label: label,  // datasetname
+			Value: int(v), // value
 			Style: pterm.NewStyle(pterm.FgLightGreen),
 		})
 		if i == 9 {
