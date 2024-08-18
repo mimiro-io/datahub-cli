@@ -2,8 +2,8 @@ package command
 
 import (
 	"github.com/mimiro-io/datahub-cli/internal/stats"
-	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var StatsCmd = &cobra.Command{
@@ -11,13 +11,18 @@ var StatsCmd = &cobra.Command{
 	Short: "retrieve storage statistics from datahub.",
 	Long: `retrieve storage statistics from datahub. statistics are compiled in a long running task in datahub and may not be available before the task is done.
 Examples:
-mim stats
+mim stats list
+mim stats top
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		pterm.Success.Println("Fetching storage statistics")
-		stats.Fetch(cmd)
+		if len(args) == 0 {
+			cmd.Usage()
+			os.Exit(0)
+		}
 	},
 }
 
 func init() {
+	StatsCmd.AddCommand(stats.ListCmd)
+	StatsCmd.AddCommand(stats.TopCmd)
 }
