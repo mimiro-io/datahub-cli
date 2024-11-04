@@ -88,7 +88,7 @@ func CmdOperate() *cobra.Command {
 
 			g, _ := errgroup.WithContext(context.Background())
 			g.SetLimit(10) // not sure if needed, but this will limit to 10 requests at once
-			p, _ := pterm.DefaultProgressbar.WithTotal(len(resolvedIds)).WithTitle("Executing operation" + operation).Start()
+			p, _ := pterm.DefaultProgressbar.WithTotal(len(resolvedIds)).WithTitle("Executing operation " + operation).Start()
 			for _, rid := range resolvedIds {
 				id := rid
 				g.Go(func() error {
