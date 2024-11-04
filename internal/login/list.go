@@ -81,9 +81,10 @@ mim login list
 				if data.OauthToken != nil && data.OauthToken.AccessToken != "" {
 					at, err := jwt.ParseString(data.OauthToken.AccessToken, jwt.WithVerify(false), jwt.WithValidate(false))
 					if err != nil {
-						driver.RenderError(err, true)
+						token = err.Error()
+					} else {
+						sub = at.Subject()
 					}
-					sub = at.Subject()
 				}
 
 				out = append(out, []string{
