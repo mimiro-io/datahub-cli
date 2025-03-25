@@ -14,18 +14,6 @@ jobs:
         with:
           go-version: 1.23
 
-      - name: Cache Go modules
-        uses: actions/cache@v2.1.5
-        with:
-          path: |
-            ~/go/pkg/mod              # Module download cache
-            ~/.cache/go-build         # Build cache (Linux)
-            ~/Library/Caches/go-build # Build cache (Mac)
-            '%LocalAppData%\go-build' # Build cache (Windows)
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4.1.1
         with:
@@ -33,4 +21,3 @@ jobs:
 
       - name: Build, test
         run: make all
-

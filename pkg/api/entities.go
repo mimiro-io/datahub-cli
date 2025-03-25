@@ -32,9 +32,9 @@ import (
 )
 
 type Entity struct {
-	ID         string                 `json:"id"`
-	Recorded   uint64                 `json:"recorded"`
-	IsDeleted  bool                   `json:"deleted"`
+	ID         string                 `json:"id,omitempty"`
+	Recorded   uint64                 `json:"recorded,omitempty"`
+	IsDeleted  bool                   `json:"deleted,omitempty"`
 	References map[string]interface{} `json:"refs"`
 	Properties map[string]interface{} `json:"props"`
 }
@@ -168,7 +168,6 @@ func (s *StdinDatasetSource) readEntities(since string, batchSize int, processEn
 			}
 			return nil
 		})
-
 		if err != nil {
 			return err
 		}
