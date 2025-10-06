@@ -62,3 +62,10 @@ func (o *JobOperation) Run(_ context.Context, jobId string, jobType string) (Job
 func (o *JobOperation) Test(_ context.Context, jobId string) (JobOperationResponse, error) {
 	return web.Put[JobOperationResponse](o.server, o.token, fmt.Sprintf("/job/%s/testx", jobId))
 }
+
+// Reset will reset the since tokens on a job, running the job from the start of the dataset
+func (o *JobOperation) ResetMetadata(_ context.Context, jobId string) (JobOperationResponse, error) {
+	endpoint := fmt.Sprintf("/job/%s/reset_meta", jobId)
+
+	return web.Put[JobOperationResponse](o.server, o.token, endpoint)
+}

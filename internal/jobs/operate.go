@@ -17,13 +17,14 @@ package jobs
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"github.com/rotisserie/eris"
 	"golang.org/x/sync/errgroup"
-	"os"
-	"time"
 
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -41,8 +42,8 @@ func CmdOperate() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "operate",
-		Short: "Run, stop, pause, resume and kill jobs with given job id",
-		Long: `Run, stop, pause, resume and kill jobs with given job id, For example:
+		Short: "Run, stop, pause, resume, reset-metadata and kill jobs with given job id",
+		Long: `Run, stop, pause, resume, reset-metadata and kill jobs with given job id, For example:
 
 	mim jobs operate -i <id> -o stop
 	mim jobs operate --id <id> --operation stop
@@ -126,7 +127,7 @@ func CmdOperate() *cobra.Command {
 	cmd.Flags().StringVarP(&jobType, "jobType", "t", "", "Job type for operation run: fullsync or incremental")
 	cmd.Flags().BoolVarP(&wait, "wait", "w", false, "Use together with run operation to wait for the job to finish. When set you can only have 1 job id.")
 	_ = cmd.RegisterFlagCompletionFunc("operation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"run", "stop", "pause", "resume", "kill", "reset"}, cobra.ShellCompDirectiveDefault
+		return []string{"run", "stop", "pause", "resume", "kill", "reset", "reset-metadata"}, cobra.ShellCompDirectiveDefault
 	})
 	_ = cmd.RegisterFlagCompletionFunc("jobType", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"fullsync", "incremental"}, cobra.ShellCompDirectiveDefault
@@ -158,8 +159,10 @@ func operate(jm *api.JobManager, operation string, id api.JobId, since string, j
 		}
 	case "test":
 		_, err = jm.Operate.Test(ctx, id.Id)
+	case "reset-metadata":
+		_, err = jm.Operate.ResetMetadata(ctx, id.Id)
 	default:
-		pterm.Warning.Println("Unsupported operation! Supported is run, pause, resume, reset and kill.")
+		pterm.Warning.Println("Unsupported operation! Supported is run, pause, resume, reset, kill and reset-metadata.")
 	}
 	return err
 }
