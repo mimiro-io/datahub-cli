@@ -7,7 +7,6 @@ import (
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/internal/web"
-	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/pretty"
@@ -23,12 +22,6 @@ mim lineage all
 		showAll(cmd)
 	},
 
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if len(args) != 0 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
-		}
-		return api.GetJobsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
-	},
 	TraverseChildren: true,
 }
 
