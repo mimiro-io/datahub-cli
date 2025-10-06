@@ -16,7 +16,7 @@ type JobOperationResponse struct {
 	JobId string `json:"jobId"`
 }
 
-// NewJobOperation will return a new JobOperation service. If you are already using the Jobe, then
+// NewJobOperation will return a new JobOperation service. If you are already using the JobManager, then
 // this will have been initiated for you already, and you can call jm.Operate.XX.
 // Note that all methods take an ignored context, these should be refactored later together with a rework of the
 // http clients, as they are a bit all over the place.
