@@ -16,7 +16,7 @@ type JobOperationResponse struct {
 	JobId string `json:"jobId"`
 }
 
-// NewJobOperation will return a new JobOperation service. If you are already using the JobManager, then
+// NewJobOperation will return a new JobOperation service. If you are already using the Jobe, then
 // this will have been initiated for you already, and you can call jm.Operate.XX.
 // Note that all methods take an ignored context, these should be refactored later together with a rework of the
 // http clients, as they are a bit all over the place.
@@ -61,4 +61,11 @@ func (o *JobOperation) Run(_ context.Context, jobId string, jobType string) (Job
 // Test is just for testing and will always fail
 func (o *JobOperation) Test(_ context.Context, jobId string) (JobOperationResponse, error) {
 	return web.Put[JobOperationResponse](o.server, o.token, fmt.Sprintf("/job/%s/testx", jobId))
+}
+
+// Reset will reset the since tokens on a job, running the job from the start of the dataset
+func (o *JobOperation) ResetMetadata(_ context.Context, jobId string) (JobOperationResponse, error) {
+	endpoint := fmt.Sprintf("/job/%s/reset_meta", jobId)
+
+	return web.Put[JobOperationResponse](o.server, o.token, endpoint)
 }
