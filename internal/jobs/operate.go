@@ -158,6 +158,7 @@ func operate(jm *api.JobManager, operation string, id api.JobId, since string, j
 			_, err = jm.Operate.Run(ctx, id.Id, jobType)
 		}
 	case "test":
+		_, err = jm.Operate.Test(ctx, id.Id)
 	case "reset-metadata":
 		_, err = jm.Operate.ResetMetadata(ctx, id.Id)
 	default:
