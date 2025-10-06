@@ -3,13 +3,15 @@ package lineage
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/mimiro-io/datahub-cli/internal/login"
 	"github.com/mimiro-io/datahub-cli/internal/utils"
 	"github.com/mimiro-io/datahub-cli/internal/web"
+	"github.com/mimiro-io/datahub-cli/pkg/api"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 	"github.com/tidwall/pretty"
-	"os"
 )
 
 var SelectCmd = &cobra.Command{
@@ -26,7 +28,12 @@ mim lineage select <datasetName>
 		dataset := args[0]
 		showDs(cmd, dataset)
 	},
-
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return api.GetJobsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+	},
 	TraverseChildren: true,
 }
 
