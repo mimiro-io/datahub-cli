@@ -32,7 +32,7 @@ mim lineage select <datasetName>
 		if len(args) != 0 {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
-		return api.GetJobsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
+		return api.GetDatasetsCompletion(toComplete), cobra.ShellCompDirectiveNoFileComp
 	},
 	TraverseChildren: true,
 }
