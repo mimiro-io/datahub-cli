@@ -142,12 +142,16 @@ func outputSink(format string) api.Sink {
 func getEntities(result []interface{}) []*api.Entity {
 	entities := make([]*api.Entity, 0)
 
-	for i, e := range result {
-		if i == 0 || i == len(result)-1 { // this will always be an entity
-			entities = append(entities, e.(*api.Entity))
-		} else {
-			items := e.([]interface{})
-			entities = append(entities, items[2].(*api.Entity))
+	for _, e := range result {
+		switch v := e.(type) {
+		case *api.Entity:
+			entities = append(entities, v)
+		case []interface{}:
+			if len(v) > 2 {
+				if entity, ok := v[2].(*api.Entity); ok {
+					entities = append(entities, entity)
+				}
+			}
 		}
 	}
 	return entities
