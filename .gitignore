@@ -36,3 +36,5 @@ internal/command/VERSION
 
 # macOS
 .DS_Store
+
+CLAUDE.md
