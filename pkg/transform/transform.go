@@ -36,6 +36,59 @@ type Options struct {
 	Bearer  string
 	Logger  Logger
 	Timeout time.Duration
+
+	// All three nil in production. The operator UI uses QueryRecorder to
+	// discover what a transform pulled in via Query/FindById, OverlayResolver
+	// to substitute mocked entity fields before user code observes them, and
+	// SyntheticProvider to inject user-authored mock entities into FindById /
+	// Query results when the hub itself wouldn't surface them.
+	QueryRecorder     QueryRecorder
+	OverlayResolver   OverlayResolver
+	SyntheticProvider SyntheticProvider
+}
+
+// QueryRecorder observes the entities surfaced through Query / FindById, in
+// the order they reach user code (i.e. after OverlayResolver has run).
+type QueryRecorder interface {
+	RecordQuery(record QueryRecord)
+}
+
+type QueryRecord struct {
+	Kind        string        // "query" | "findById"
+	StartingIds []string
+	Predicate   string
+	Inverse     bool
+	Datasets    []string
+	Entities    []*api.Entity
+}
+
+// OverlayResolver gets a shot at every entity emerging from Query / FindById
+// before it reaches user code. Implementations return the entity to hand on —
+// either the original or a (cloned and) mutated version. Returning nil signals
+// "no overlay; use the original".
+type OverlayResolver interface {
+	ResolveOverlay(e *api.Entity) *api.Entity
+}
+
+// SyntheticProvider injects user-authored mock entities into the runtime.
+//
+// Lookup is called by tf.ById and the cli's Query-augmentation path to resolve
+// a specific id against the operator's authored mocks. If a synthetic exists
+// with that id (and a matching dataset, when the call passes a non-empty
+// datasets filter), it stands in for any hub result. The synthetic is then
+// run through OverlayResolver just like a hub entity would be, so pinned
+// overrides still apply.
+//
+// All returns every synthetic that passes the datasets filter — used by the
+// cli's Query augmentation to walk the candidate pool for inverse lookups
+// (entities whose refs[predicate] points at one of the startingIds) and as
+// the fallback target pool when the hub returns no tuples.
+//
+// The datasets slice is honoured in both methods: when non-empty, the
+// synthetic's dataset must appear in the slice to participate.
+type SyntheticProvider interface {
+	Lookup(id string, datasets []string) *api.Entity
+	All(datasets []string) []*api.Entity
 }
 
 // Compile and runtime errors surface as level=error entries on Logs with
@@ -67,7 +120,7 @@ func Run(ctx context.Context, source string, entities []*api.Entity, opts Option
 		return res, nil
 	}
 
-	tf := newTransformer(opts.HubURL, opts.Bearer, collector)
+	tf := newTransformer(opts.HubURL, opts.Bearer, collector, opts.QueryRecorder, opts.OverlayResolver, opts.SyntheticProvider, entities)
 	engine := goja.New()
 	hookEngine(engine, tf)
 
