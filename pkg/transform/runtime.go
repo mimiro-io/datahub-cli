@@ -142,75 +142,84 @@ func (tf *transformer) Query(startingEntities []string, predicate string, invers
 		}
 	}
 
-	pool := tf.candidatePool(datasets)
-	starting := make(map[string]struct{}, len(startingEntities))
-	for _, s := range startingEntities {
-		starting[s] = struct{}{}
-	}
-
-	if !inverse {
-		for _, startId := range startingEntities {
-			src, ok := pool[startId]
-			if !ok || src == nil || src.References == nil {
-				continue
-			}
-			refVal, refOK := src.References[predicate]
-			if !refOK {
-				continue
-			}
-			for _, targetId := range refValueToStrings(refVal) {
-				key := queryTupleKey(startId, targetId)
-				if _, dup := seen[key]; dup {
-					continue
-				}
-				tgt := tf.resolveTarget(targetId, datasets)
-				if tgt == nil {
-					continue
-				}
-				tgt = tf.applyOverlay(tgt)
-				if tgt == nil {
-					continue
-				}
-				out = append(out, []interface{}{startId, predicate, tgt})
-				recorded = append(recorded, tgt)
-				seen[key] = struct{}{}
-			}
+	// Inputs/synthetics augmentation runs only in "scratchpad mode" — when the
+	// operator authored synthetics or overlays. In plain "production preview"
+	// runs (neither in scope) the run reflects exactly what the hub will do
+	// in production: no silent rescue from the working set.
+	if tf.mockMode() {
+		pool := tf.candidatePool(datasets)
+		starting := make(map[string]struct{}, len(startingEntities))
+		for _, s := range startingEntities {
+			starting[s] = struct{}{}
 		}
-	} else {
-		for _, cand := range pool {
-			if cand == nil || cand.References == nil {
-				continue
+
+		if !inverse {
+			for _, startId := range startingEntities {
+				src, ok := pool[startId]
+				if !ok || src == nil || src.References == nil {
+					continue
+				}
+				refVal, refOK := src.References[predicate]
+				if !refOK {
+					continue
+				}
+				for _, targetId := range refValueToStrings(refVal) {
+					key := queryTupleKey(startId, targetId)
+					if _, dup := seen[key]; dup {
+						continue
+					}
+					tgt := tf.resolveTarget(targetId, datasets)
+					if tgt == nil {
+						continue
+					}
+					tgt = tf.applyOverlay(tgt)
+					if tgt == nil {
+						continue
+					}
+					out = append(out, []interface{}{startId, predicate, tgt})
+					recorded = append(recorded, tgt)
+					seen[key] = struct{}{}
+				}
 			}
-			refVal, refOK := cand.References[predicate]
-			if !refOK {
-				continue
-			}
-			for _, targetId := range refValueToStrings(refVal) {
-				if _, isStart := starting[targetId]; !isStart {
+		} else {
+			for _, cand := range pool {
+				if cand == nil || cand.References == nil {
 					continue
 				}
-				key := queryTupleKey(targetId, cand.ID)
-				if _, dup := seen[key]; dup {
+				refVal, refOK := cand.References[predicate]
+				if !refOK {
 					continue
 				}
-				resolved := tf.applyOverlay(cand)
-				if resolved == nil {
-					continue
+				for _, targetId := range refValueToStrings(refVal) {
+					if _, isStart := starting[targetId]; !isStart {
+						continue
+					}
+					key := queryTupleKey(targetId, cand.ID)
+					if _, dup := seen[key]; dup {
+						continue
+					}
+					resolved := tf.applyOverlay(cand)
+					if resolved == nil {
+						continue
+					}
+					out = append(out, []interface{}{targetId, predicate, resolved})
+					recorded = append(recorded, resolved)
+					seen[key] = struct{}{}
+					break
 				}
-				out = append(out, []interface{}{targetId, predicate, resolved})
-				recorded = append(recorded, resolved)
-				seen[key] = struct{}{}
-				break
 			}
 		}
 	}
 
 	// Surface the hub failure only when augmentation didn't rescue the call.
 	// If inputs/synthetics produced tuples, the operator authored a mock on
-	// purpose — the run is succeeding by design and a warn would be friction.
+	// purpose — the run is succeeding by design and a log would be friction.
+	// Otherwise the hub error is real (auth, network, missing predicate with
+	// no mock to cover it) and the operator needs to see it as an error so
+	// the run is marked failed in the UI.
 	if hubErr != nil && len(out) == 0 {
 		tf.logs.add(LogEntry{
-			Level:     "warn",
+			Level:     "error",
 			Message:   fmt.Sprintf("Query: hub returned %q; no inputs/synthetics matched", hubErr.Error()),
 			Timestamp: time.Now(),
 		})
@@ -294,37 +303,47 @@ func refValueToStrings(v interface{}) []string {
 	return nil
 }
 
+// mockMode is true when the caller passed at least one synthetic or overlay
+// in this run. It gates the inputs/synthetics augmentation paths in Query and
+// FindById — without mocks, the runtime defers entirely to the hub so a
+// scratchpad run mirrors production behaviour.
+func (tf *transformer) mockMode() bool {
+	return tf.synthetics != nil || tf.resolver != nil
+}
+
 func (tf *transformer) ById(entityId string, datasets []string) *api.Entity {
-	// Inputs win — the user's working set is in scope even when no hub-side
-	// representation exists yet. Dataset filter doesn't apply to inputs
-	// (they aren't tagged with a dataset).
-	if e, ok := tf.inputs[entityId]; ok {
-		entity := tf.applyOverlay(e)
-		if entity != nil {
-			tf.recordQuery(QueryRecord{
-				Kind:        "findById",
-				StartingIds: []string{entityId},
-				Datasets:    datasets,
-				Entities:    []*api.Entity{entity},
-			})
-		}
-		return entity
-	}
-	// Synthetic mocks take precedence over the hub — operators author them to
-	// short-circuit a real lookup (typically because the dataset doesn't exist
-	// on the hub yet).
-	if tf.synthetics != nil {
-		if syn := tf.synthetics.Lookup(entityId, datasets); syn != nil {
-			syn = tf.applyOverlay(syn)
-			if syn != nil {
+	if tf.mockMode() {
+		// Inputs win — the user's working set is in scope even when no hub-side
+		// representation exists yet. Dataset filter doesn't apply to inputs
+		// (they aren't tagged with a dataset).
+		if e, ok := tf.inputs[entityId]; ok {
+			entity := tf.applyOverlay(e)
+			if entity != nil {
 				tf.recordQuery(QueryRecord{
 					Kind:        "findById",
 					StartingIds: []string{entityId},
 					Datasets:    datasets,
-					Entities:    []*api.Entity{syn},
+					Entities:    []*api.Entity{entity},
 				})
 			}
-			return syn
+			return entity
+		}
+		// Synthetic mocks take precedence over the hub — operators author them to
+		// short-circuit a real lookup (typically because the dataset doesn't exist
+		// on the hub yet).
+		if tf.synthetics != nil {
+			if syn := tf.synthetics.Lookup(entityId, datasets); syn != nil {
+				syn = tf.applyOverlay(syn)
+				if syn != nil {
+					tf.recordQuery(QueryRecord{
+						Kind:        "findById",
+						StartingIds: []string{entityId},
+						Datasets:    datasets,
+						Entities:    []*api.Entity{syn},
+					})
+				}
+				return syn
+			}
 		}
 	}
 	entity, err := tf.query.QuerySingle(entityId, datasets)

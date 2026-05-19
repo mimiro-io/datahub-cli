@@ -732,9 +732,10 @@ func TestRun_QueryHubErrorWithInputSourceFindsSyntheticTarget(t *testing.T) {
 	}
 }
 
-// Sibling case: hub fails AND no synthetic/input matches. The warn surfaces
-// so the operator sees what happened instead of getting silent zero results.
-func TestRun_QueryHubErrorWithoutAugmentationSurfacesWarn(t *testing.T) {
+// Sibling case: hub fails AND no synthetic/input matches. The error surfaces
+// so the operator sees what happened (and the UI marks the run failed)
+// instead of getting silent zero results.
+func TestRun_QueryHubErrorWithoutAugmentationSurfacesError(t *testing.T) {
 	srv := stubHubQuery500(t, nil)
 	defer srv.Close()
 
@@ -750,14 +751,63 @@ func TestRun_QueryHubErrorWithoutAugmentationSurfacesWarn(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	sawWarn := false
+	sawError := false
 	for _, l := range res.Logs {
+		if l.Level == "error" && strings.Contains(l.Message, "could not load predicate") {
+			sawError = true
+		}
 		if l.Level == "warn" && strings.Contains(l.Message, "could not load predicate") {
-			sawWarn = true
+			t.Errorf("hub failure with no augmentation should be error, not warn: %+v", l)
 		}
 	}
-	if !sawWarn {
-		t.Errorf("hub failure with no augmentation should surface a warn; got %+v", res.Logs)
+	if !sawError {
+		t.Errorf("hub failure with no augmentation should surface an error; got %+v", res.Logs)
+	}
+}
+
+// TestRun_QueryHubErrorWithInputRefsButNoMocksSurfacesError pins the
+// production-preview contract: when no synthetics or overlays are in scope,
+// the runtime must not rescue a failing hub Query by walking the input's
+// refs — operators previewing a transform need to see the same hub failure
+// they'd see in a real job run.
+func TestRun_QueryHubErrorWithInputRefsButNoMocksSurfacesError(t *testing.T) {
+	srv := stubHubQuery500(t, nil)
+	defer srv.Close()
+
+	// Input carries a ref that *would* let the augmentation rescue if mock
+	// mode were on. Without mocks, the rescue must be skipped.
+	input := &api.Entity{
+		ID: "ns825:1",
+		Properties: map[string]any{},
+		References: map[string]any{
+			"ns825:produsent_id": "ns824:1",
+		},
+	}
+	src := `
+		function transform_entities(entities: any[]) {
+			let hits = Query([GetId(entities[0])], "ns825:produsent_id", false, ["raavaretorget.Leveranse"]);
+			if (hits.length > 0) {
+				Log("rescued (should not happen in production-preview mode)", "warn");
+			}
+			return entities;
+		}
+	`
+	res, err := Run(context.Background(), src, []*api.Entity{input}, Options{HubURL: srv.URL})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	sawError := false
+	for _, l := range res.Logs {
+		if l.Level == "error" && strings.Contains(l.Message, "could not load predicate") {
+			sawError = true
+		}
+		if strings.Contains(l.Message, "rescued") {
+			t.Errorf("augmentation rescued the query without mocks in scope: %+v", res.Logs)
+		}
+	}
+	if !sawError {
+		t.Errorf("expected the hub failure to surface as an error log; got %+v", res.Logs)
 	}
 }
 
