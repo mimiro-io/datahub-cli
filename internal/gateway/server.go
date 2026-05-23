@@ -355,6 +355,36 @@ func makeValue(raw interface{}, isRef bool, valueFunc func(string) string) []*Va
 				multiValue = append(multiValue, val)
 			}
 		}
+	case []interface{}:
+		values := make([]*Value, 0)
+		for _, v1 := range v {
+			newValues := makeValue(v1, isRef, valueFunc)
+			for _, val1 := range newValues {
+				exist := false
+				for _, val2 := range values {
+					if val1.IsRef {
+						if val1.URI == val2.URI {
+							exist = true
+						}
+					} else {
+						if val1.Value == val2.Value {
+							exist = true
+						}
+					}
+				}
+				if !exist {
+					values = append(values, val1)
+				}
+			}
+
+		}
+		multiValue = append(multiValue, values...)
+	case nil:
+		val := &Value{Value: "nil", IsRef: false}
+		multiValue = append(multiValue, val)
+	case bool:
+		val := &Value{Value: fmt.Sprintf("%t", v), IsRef: false}
+		multiValue = append(multiValue, val)
 	default:
 		val := &Value{Value: "unknown type", IsRef: false}
 		multiValue = append(multiValue, val)
