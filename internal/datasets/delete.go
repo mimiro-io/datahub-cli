@@ -61,7 +61,7 @@ mim jobs delete -i <id>
 		pterm.DefaultSection.Println("Deleting dataset " + server + "/datasets/" + name)
 
 		if confirm {
-			pterm.DefaultSection.Printf("Delete dataset with name " + name + " on " + server + ", please type (y)es or (n)o and then press enter:")
+			pterm.DefaultSection.Print("Delete dataset with name " + name + " on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
 				err = web.DeleteRequest(server, token, fmt.Sprintf("/datasets/%s", name))
 				utils.HandleError(err)

@@ -278,7 +278,7 @@ func resolveCmds(cmd *cobra.Command, args []string) cmds {
 }
 
 func queryScalar(c cmds, server string, token string) ([]*api.Entity, error) {
-	pterm.DefaultSection.Printf("Query for entity " + c.id + " on " + server)
+	pterm.DefaultSection.Print("Query for entity " + c.id + " on " + server)
 
 	qb := queries.NewQueryBuilder(server, token)
 

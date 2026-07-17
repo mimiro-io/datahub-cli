@@ -111,7 +111,7 @@ func (imp *Importer) buildCode() (*api.BuildResult, error) {
 	result := api.Build(options)
 
 	for _, w := range result.Warnings {
-		pterm.Warning.Printf(w.Text)
+		pterm.Warning.Print(w.Text)
 	}
 	if len(result.Errors) > 0 {
 		for _, e := range result.Errors {
