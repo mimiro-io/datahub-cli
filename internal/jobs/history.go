@@ -58,7 +58,7 @@ var HistoryCmd = &cobra.Command{
 		jm := api.NewJobManager(server, token)
 		id := jm.ResolveId(idOrTitle)
 
-		pterm.DefaultSection.Printf("Get history of job with id: " + id + " (" + idOrTitle + ") on " + server)
+		pterm.DefaultSection.Print("Get history of job with id: " + id + " (" + idOrTitle + ") on " + server)
 
 		hist, err := jm.GetJobHistoryForId(id)
 		utils.HandleError(err)

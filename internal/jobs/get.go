@@ -64,7 +64,7 @@ to quickly create a Cobra application.`,
 		jm := api.NewJobManager(server, token)
 		id := jm.ResolveId(idOrTitle)
 
-		pterm.DefaultSection.Printf("Get description of job with id: " + id + " (" + idOrTitle + ") on " + server)
+		pterm.DefaultSection.Print("Get description of job with id: " + id + " (" + idOrTitle + ") on " + server)
 
 		job, err := jm.GetJob(id)
 		utils.HandleError(err)

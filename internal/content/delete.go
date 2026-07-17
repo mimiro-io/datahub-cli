@@ -61,7 +61,7 @@ mim content delete my-id
 		pterm.DefaultSection.Println("Deleting content " + server + "/content/" + id)
 
 		if confirm {
-			pterm.DefaultSection.Printf("Delete content with content id " + id + " on " + server + ", please type (y)es or (n)o and then press enter:")
+			pterm.DefaultSection.Print("Delete content with content id " + id + " on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
 				err = web.DeleteRequest(server, token, fmt.Sprintf("/content/%s", id))
 				utils.HandleError(err)

@@ -64,7 +64,7 @@ to quickly create a Cobra application.`,
 		pterm.DefaultSection.Println("Deleting job with id: " + id + " (" + idOrTitle + ") ")
 
 		if confirm {
-			pterm.Warning.Printf("Delete job with job id: " + id + " (" + idOrTitle + ") on " + server + ", please type (y)es or (n)o and then press enter:")
+			pterm.Warning.Print("Delete job with job id: " + id + " (" + idOrTitle + ") on " + server + ", please type (y)es or (n)o and then press enter:")
 			if utils.AskForConfirmation() {
 				err = jm.DeleteJob(id)
 				utils.HandleError(err)

@@ -66,9 +66,9 @@ mim jobs status
 
 		if idOrTitle != "" {
 			id = jm.ResolveId(idOrTitle)
-			pterm.DefaultSection.Printf("Get status on job with job id: " + id + " (" + idOrTitle + ") on " + server)
+			pterm.DefaultSection.Print("Get status on job with job id: " + id + " (" + idOrTitle + ") on " + server)
 		} else {
-			pterm.DefaultSection.Printf("Get status on all running jobs on " + server)
+			pterm.DefaultSection.Print("Get status on all running jobs on " + server)
 			id = ""
 		}
 		jobs, err := jm.GetJobStatus(id)

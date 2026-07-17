@@ -95,9 +95,9 @@ func output(statsBytes []byte, format string) {
 
 		box := pterm.DefaultBox.WithLeftPadding(10).WithRightPadding(10).WithTopPadding(1).WithBottomPadding(1)
 		p, _ := pterm.DefaultPanel.WithPanels(pterm.Panels{[]pterm.Panel{
-			{Data: box.Sprintf(fmt.Sprintf("Keys: %10d", keyCount))},
-			{Data: box.Sprintf("Key Size: " + ByteCountIEC(keySize))},
-			{Data: box.Sprintf("Value Size: " + ByteCountIEC(valueSize))}}}).
+			{Data: box.Sprint(fmt.Sprintf("Keys: %10d", keyCount))},
+			{Data: box.Sprint("Key Size: " + ByteCountIEC(keySize))},
+			{Data: box.Sprint("Value Size: " + ByteCountIEC(valueSize))}}}).
 			WithPadding(5).
 			Srender()
 
