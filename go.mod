@@ -1,8 +1,8 @@
 module github.com/mimiro-io/datahub-cli
 
-go 1.25.0
+go 1.26.0
 
-toolchain go1.26.5
+toolchain go1.27.4
 
 require (
 	github.com/MichaelMure/go-term-markdown v0.1.4
@@ -19,13 +19,13 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b // indirect
+	github.com/gomarkdown/markdown v0.0.0-20260411013819-759bbc3e3207 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kyokomi/emoji/v2 v2.2.13 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/mattn/go-colorable v0.1.15 // indirect
+	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pterm/pterm v0.12.80
@@ -41,11 +41,11 @@ require (
 	github.com/tidwall/pretty v1.2.1
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	go.etcd.io/bbolt v1.4.0
-	golang.org/x/image v0.43.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/term v0.43.0 // indirect
-	golang.org/x/text v0.38.0
+	golang.org/x/image v0.45.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/term v0.47.0 // indirect
+	golang.org/x/text v0.43.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -57,16 +57,16 @@ require (
 	github.com/nirasan/go-oauth-pkce-code-verifier v0.0.0-20220510032225-4f9f17eaec4c
 	github.com/pkg/errors v0.9.1
 	golang.org/x/oauth2 v0.28.0
-	golang.org/x/sync v0.21.0
+	golang.org/x/sync v0.24.0
 )
 
 require (
 	atomicgo.dev/schedule v0.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
-	github.com/labstack/gommon v0.4.2 // indirect
+	github.com/labstack/gommon v0.5.0 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/httprc v1.0.6 // indirect
@@ -78,7 +78,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 )
 
@@ -86,7 +86,7 @@ require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	github.com/containerd/console v1.0.4 // indirect
-	github.com/labstack/echo/v4 v4.13.3
+	github.com/labstack/echo/v4 v4.16.4
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 )
